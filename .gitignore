@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+!.env.example
+pg_logfile
+temp_pg_data
+*.tar.gz
+.DS_Store
+coverage/
+build/
+.nyc_output/

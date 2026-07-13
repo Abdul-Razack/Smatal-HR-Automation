@@ -1,0 +1,23 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@smatal/contracts/*": ["../shared/api-contracts/*"],
+      "@smatal/types/*": ["../shared/types/*"],
+      "@smatal/constants/*": ["../shared/constants/*"],
+      "@smatal/infrastructure/*": ["../infrastructure/*"],
+      "@smatal/integrations/*": ["../infrastructure/integrations/*"],
+      "@smatal/kernel/*": ["./src/kernel/*"],
+      "@smatal/common/*": ["./src/common/*"],
+      "@smatal/observability/*": ["./src/observability/*"],
+      "@smatal/identity/*": ["./src/modules/identity/src/contracts/*"],
+      "@smatal/organization/*": ["./src/modules/organization/src/contracts/*"],
+      "@smatal/document/*": ["./src/modules/document/src/contracts/*"],
+      "@smatal/template/*": ["./src/modules/template/src/contracts/*"],
+      "@smatal/workflow/*": ["./src/modules/workflow/src/contracts/*"],
+      "@smatal/audit/*": ["./src/modules/audit/src/contracts/*"]
+    }
+  }
+}

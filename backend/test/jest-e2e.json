@@ -1,0 +1,23 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": ".",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^@smatal/kernel/(.*)$": "<rootDir>/../src/kernel/$1",
+    "^@smatal/common/(.*)$": "<rootDir>/../src/common/$1",
+    "^@smatal/infrastructure/(.*)$": "<rootDir>/../src/infrastructure/$1",
+    "^@smatal/contracts/(.*)$": "<rootDir>/../../shared/api-contracts/$1",
+    "^@smatal/types/(.*)$": "<rootDir>/../../shared/types/$1",
+    "^@smatal/identity/(.*)$": "<rootDir>/../src/modules/identity/src/contracts/$1",
+    "^@smatal/organization/(.*)$": "<rootDir>/../src/modules/organization/src/contracts/$1",
+    "^@smatal/document/(.*)$": "<rootDir>/../src/modules/document/src/contracts/$1",
+    "^@smatal/template/(.*)$": "<rootDir>/../src/modules/template/src/contracts/$1",
+    "^@smatal/workflow/(.*)$": "<rootDir>/../src/modules/workflow/src/contracts/$1",
+    "^@smatal/audit/(.*)$": "<rootDir>/../src/modules/audit/src/contracts/$1",
+    "^@prisma/client$": "<rootDir>/../../node_modules/@prisma/client"
+  }
+}
