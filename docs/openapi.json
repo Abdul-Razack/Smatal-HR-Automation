@@ -1,0 +1,4081 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health/liveness": {
+      "get": {
+        "operationId": "HealthController_checkLiveness_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Check if the application is alive",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/health/readiness": {
+      "get": {
+        "operationId": "HealthController_checkReadiness_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Check if the application is ready to accept traffic",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "AuthController_register_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "AuthController_login_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Login and get JWT tokens",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Refresh JWT access token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change current user password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "summary": "Request password reset email",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Reset password using token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout_v1",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Logout user (invalidate tokens)",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "operationId": "UserController_getMe_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user profile",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "operationId": "UserController_getUserById_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user by ID",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "operationId": "UserController_listUsers_v1",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List users in company (paginated)",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/users/{id}/deactivate": {
+      "post": {
+        "operationId": "UserController_deactivateUser_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Deactivate user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/roles": {
+      "get": {
+        "operationId": "RoleController_listRoles_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RoleResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all roles for company",
+        "tags": [
+          "Roles"
+        ]
+      },
+      "post": {
+        "operationId": "RoleController_createRole_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create custom role",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/api/v1/roles/{id}": {
+      "get": {
+        "operationId": "RoleController_getRoleById_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoleResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get role by ID",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/api/v1/roles/assign": {
+      "post": {
+        "operationId": "RoleController_assignRole_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRoleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Assign role to user",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/api/v1/master/fields/definitions": {
+      "post": {
+        "operationId": "FieldRegistryController_createFieldDefinition_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFieldDefinitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Field definition created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new dynamic field definition",
+        "tags": [
+          "Master / Field Registry"
+        ]
+      }
+    },
+    "/api/v1/master/fields/groups": {
+      "post": {
+        "operationId": "FieldRegistryController_createFieldGroup_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFieldGroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Field group created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new field group",
+        "tags": [
+          "Master / Field Registry"
+        ]
+      }
+    },
+    "/api/v1/master/document-types": {
+      "post": {
+        "operationId": "DocumentTypeController_createDocumentType_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDocumentTypeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document type created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new document type",
+        "tags": [
+          "Master / Document Types"
+        ]
+      }
+    },
+    "/api/v1/organization/company/me": {
+      "get": {
+        "operationId": "OrganizationController_getMyCompany_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrganizationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user company details",
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/api/v1/organization/company": {
+      "post": {
+        "operationId": "OrganizationController_createCompany_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCompanyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new company (Super Admin)",
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/api/v1/organization/branches": {
+      "get": {
+        "operationId": "OrganizationController_listBranches_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all branches for company",
+        "tags": [
+          "Organization"
+        ]
+      },
+      "post": {
+        "operationId": "OrganizationController_createBranch_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBranchDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new branch",
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/api/v1/organization/departments": {
+      "get": {
+        "operationId": "OrganizationController_listDepartments_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartmentResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all departments for company",
+        "tags": [
+          "Organization"
+        ]
+      },
+      "post": {
+        "operationId": "OrganizationController_createDepartment_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDepartmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new department",
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/api/v1/organization/designations": {
+      "get": {
+        "operationId": "OrganizationController_listDesignations_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OrganizationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all designations for company",
+        "tags": [
+          "Organization"
+        ]
+      },
+      "post": {
+        "operationId": "OrganizationController_createDesignation_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDesignationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create new designation",
+        "tags": [
+          "Organization"
+        ]
+      }
+    },
+    "/api/v1/candidates": {
+      "post": {
+        "operationId": "CandidateController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCandidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Candidate created"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new candidate",
+        "tags": [
+          "Candidates"
+        ]
+      },
+      "get": {
+        "operationId": "CandidateController_list_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DRAFT",
+                "APPLIED",
+                "SCREENING",
+                "INTERVIEWING",
+                "SELECTED",
+                "REJECTED",
+                "WITHDRAWN",
+                "CONVERTED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List candidates for the authenticated company",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}": {
+      "get": {
+        "operationId": "CandidateController_getOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get a candidate by ID",
+        "tags": [
+          "Candidates"
+        ]
+      },
+      "patch": {
+        "operationId": "CandidateController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCandidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update candidate details",
+        "tags": [
+          "Candidates"
+        ]
+      },
+      "delete": {
+        "operationId": "CandidateController_delete_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft delete a candidate",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}/submit": {
+      "post": {
+        "operationId": "CandidateController_submit_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit candidate for review (DRAFT → APPLIED)",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}/screen": {
+      "post": {
+        "operationId": "CandidateController_screen_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Move candidate to screening (APPLIED → SCREENING)",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}/select": {
+      "post": {
+        "operationId": "CandidateController_select_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Select candidate (INTERVIEWING → SELECTED)",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}/reject": {
+      "post": {
+        "operationId": "CandidateController_reject_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectCandidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject candidate",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}/withdraw": {
+      "post": {
+        "operationId": "CandidateController_withdraw_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawCandidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Withdraw candidate application",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/candidates/{id}/convert": {
+      "post": {
+        "operationId": "CandidateController_convert_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertCandidateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Convert selected candidate to employee",
+        "tags": [
+          "Candidates"
+        ]
+      }
+    },
+    "/api/v1/employees": {
+      "get": {
+        "operationId": "EmployeeController_list_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "ONBOARDING",
+                "ACTIVE",
+                "NOTICE",
+                "TERMINATED",
+                "RESIGNED",
+                "RETIRED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "departmentId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List employees for the authenticated company",
+        "tags": [
+          "Employees"
+        ]
+      }
+    },
+    "/api/v1/employees/{id}": {
+      "get": {
+        "operationId": "EmployeeController_getOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get employee by ID",
+        "tags": [
+          "Employees"
+        ]
+      },
+      "patch": {
+        "operationId": "EmployeeController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEmployeeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update employee details",
+        "tags": [
+          "Employees"
+        ]
+      },
+      "delete": {
+        "operationId": "EmployeeController_delete_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Soft delete employee",
+        "tags": [
+          "Employees"
+        ]
+      }
+    },
+    "/api/v1/employees/{id}/activate": {
+      "post": {
+        "operationId": "EmployeeController_activate_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Activate employee (ONBOARDING → ACTIVE)",
+        "tags": [
+          "Employees"
+        ]
+      }
+    },
+    "/api/v1/employees/{id}/terminate": {
+      "post": {
+        "operationId": "EmployeeController_terminate_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TerminateEmployeeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Terminate employee",
+        "tags": [
+          "Employees"
+        ]
+      }
+    },
+    "/api/v1/workflow-definitions": {
+      "post": {
+        "operationId": "WorkflowDefinitionController_create_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkflowDefinitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new workflow definition (DRAFT)",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      },
+      "get": {
+        "operationId": "WorkflowDefinitionController_list_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "DRAFT",
+                "ACTIVE",
+                "ARCHIVED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List workflow definitions",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      }
+    },
+    "/api/v1/workflow-definitions/{id}": {
+      "get": {
+        "operationId": "WorkflowDefinitionController_getOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get workflow definition by ID",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      },
+      "patch": {
+        "operationId": "WorkflowDefinitionController_update_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkflowDefinitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update workflow definition name/description",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      }
+    },
+    "/api/v1/workflow-definitions/{id}/publish": {
+      "post": {
+        "operationId": "WorkflowDefinitionController_publish_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish (activate) a workflow definition",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      }
+    },
+    "/api/v1/workflow-definitions/{id}/archive": {
+      "post": {
+        "operationId": "WorkflowDefinitionController_archive_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Archive a workflow definition",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      }
+    },
+    "/api/v1/workflow-definitions/{id}/stages": {
+      "post": {
+        "operationId": "WorkflowDefinitionController_addStage_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddWorkflowStageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a stage to a workflow definition",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      }
+    },
+    "/api/v1/workflow-definitions/{id}/stages/{stageId}": {
+      "delete": {
+        "operationId": "WorkflowDefinitionController_removeStage_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a stage from a workflow definition",
+        "tags": [
+          "Workflow Definitions"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances": {
+      "post": {
+        "operationId": "WorkflowInstanceController_start_v1",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartWorkflowInstanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start a new workflow instance",
+        "tags": [
+          "Workflow Instances"
+        ]
+      },
+      "get": {
+        "operationId": "WorkflowInstanceController_list_v1",
+        "parameters": [
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "PENDING",
+                "IN_PROGRESS",
+                "COMPLETED",
+                "CANCELLED",
+                "FAILED"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List workflow instances",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}": {
+      "get": {
+        "operationId": "WorkflowInstanceController_getOne_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get workflow instance by ID",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}/history": {
+      "get": {
+        "operationId": "WorkflowInstanceController_getHistory_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get execution history of a workflow instance",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}/advance": {
+      "post": {
+        "operationId": "WorkflowInstanceController_advance_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdvanceWorkflowStageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Advance to specific next stage",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}/approve": {
+      "post": {
+        "operationId": "WorkflowInstanceController_approve_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveWorkflowStageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Approve current stage (auto-advances or completes)",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}/reject": {
+      "post": {
+        "operationId": "WorkflowInstanceController_reject_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectWorkflowStageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reject current stage (marks instance as FAILED)",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}/return": {
+      "post": {
+        "operationId": "WorkflowInstanceController_returnToStage_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnWorkflowStageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Return to a previous stage",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/workflow-instances/{id}/cancel": {
+      "post": {
+        "operationId": "WorkflowInstanceController_cancel_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelWorkflowInstanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Cancel a workflow instance",
+        "tags": [
+          "Workflow Instances"
+        ]
+      }
+    },
+    "/api/v1/document-types": {
+      "post": {
+        "operationId": "DocumentTypeController_createDocumentType_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "DocumentType"
+        ]
+      }
+    },
+    "/api/v1/templates": {
+      "get": {
+        "operationId": "TemplateController_getTemplates_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction (asc or desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for general text search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentTypeId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Document Type ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Template Status (e.g. ACTIVE)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of templates"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all templates with pagination and filtering",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "post": {
+        "operationId": "TemplateController_createTemplate_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Template created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new document template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "put": {
+        "operationId": "TemplateController_updateTemplate_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template updated successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a template (metadata only)",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "delete": {
+        "operationId": "TemplateController_archiveTemplate_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template archived successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Archive/Delete a template",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "get": {
+        "operationId": "TemplateController_getTemplate_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template details retrieved"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get details of a specific template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}/versions": {
+      "post": {
+        "operationId": "TemplateController_createVersion_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateVersionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Version created successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new version for a template (HTML/Manual)",
+        "tags": [
+          "Templates"
+        ]
+      },
+      "get": {
+        "operationId": "TemplateController_getVersions_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Template versions retrieved"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all versions of a template",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}/versions/{versionId}/publish": {
+      "post": {
+        "operationId": "TemplateController_publishVersion_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Version published successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a specific template version",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/import": {
+      "post": {
+        "operationId": "TemplateController_importTemplate_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "DOCX Template imported successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import a DOCX template to create a new version",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}/versions/{versionId}/map-placeholders": {
+      "post": {
+        "operationId": "TemplateController_mapPlaceholders_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MapPlaceholdersRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mappings saved successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save Field Definition mappings for placeholders",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}/versions/{versionId}/placeholders": {
+      "get": {
+        "operationId": "TemplateController_getPlaceholders_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "versionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Placeholders retrieved"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get placeholders for a specific version",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/generated-documents": {
+      "get": {
+        "operationId": "GeneratedDocumentController_getAllDocuments_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "pageSize",
+            "required": false,
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Field to sort by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "order",
+            "required": false,
+            "in": "query",
+            "description": "Sort direction (asc or desc)",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for general text search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "documentTypeId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Document Type ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Generation Status (e.g. GENERATED)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "employeeId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Employee ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "candidateId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Candidate ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workflowInstanceId",
+            "required": false,
+            "in": "query",
+            "description": "Filter by Workflow Instance ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of generated documents"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List generated documents with pagination and filtering",
+        "tags": [
+          "Generated Documents"
+        ]
+      }
+    },
+    "/api/v1/generated-documents/{id}": {
+      "get": {
+        "operationId": "GeneratedDocumentController_getDocument_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Generated document details retrieved"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get generated document metadata and status",
+        "tags": [
+          "Generated Documents"
+        ]
+      },
+      "delete": {
+        "operationId": "GeneratedDocumentController_deleteDocument_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document deleted successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Void or delete a generated document",
+        "tags": [
+          "Generated Documents"
+        ]
+      }
+    },
+    "/api/v1/generated-documents/generate": {
+      "post": {
+        "operationId": "GeneratedDocumentController_generateDocument_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateDocumentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Document generation triggered successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trigger generation of a new document",
+        "tags": [
+          "Generated Documents"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}/download": {
+      "get": {
+        "operationId": "DocumentDownloadController_downloadDocument_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Format to download (e.g. pdf, docx)",
+            "schema": {
+              "enum": [
+                "pdf",
+                "docx"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File stream"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Download a generated document",
+        "tags": [
+          "Document Downloads"
+        ]
+      }
+    },
+    "/api/v1/documents/{id}/preview": {
+      "get": {
+        "operationId": "DocumentDownloadController_previewDocument_v1",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Format to preview (e.g. pdf, html)",
+            "schema": {
+              "enum": [
+                "pdf",
+                "html"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inline file stream"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview a generated document inline (Browser)",
+        "tags": [
+          "Document Downloads"
+        ]
+      }
+    },
+    "/api/v1/audit": {
+      "post": {
+        "operationId": "AuditController_createAuditLog_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Audit"
+        ]
+      },
+      "get": {
+        "operationId": "AuditController_getAuditHistory_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "entityBusinessId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Audit"
+        ]
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "operationId": "NotificationController_getNotifications_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "unreadOnly",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "post": {
+        "operationId": "NotificationController_markAsRead_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-user-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/api/v1/analytics/dashboard": {
+      "get": {
+        "operationId": "AnalyticsController_getDashboard_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/search": {
+      "get": {
+        "operationId": "AnalyticsController_globalSearch_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/report": {
+      "get": {
+        "operationId": "AnalyticsController_getReport_v1",
+        "parameters": [
+          {
+            "name": "x-company-id",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Smatal ERP API",
+    "description": "Enterprise ERP Platform API Documentation",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "Str0ng!Pass"
+          },
+          "firstName": {
+            "type": "string",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "companyId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "firstName",
+          "lastName",
+          "companyId"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "profileId": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "avatar": {
+            "type": "object"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isEmailVerified": {
+            "type": "boolean"
+          },
+          "mfaEnabled": {
+            "type": "boolean"
+          },
+          "lastLoginAt": {
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "email",
+          "profileId",
+          "companyId",
+          "isActive",
+          "isEmailVerified",
+          "mfaEnabled",
+          "lastLoginAt",
+          "createdAt"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "Str0ng!Pass"
+          },
+          "companyId": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          },
+          "expiresIn": {
+            "type": "number"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponseDto"
+          }
+        },
+        "required": [
+          "accessToken",
+          "refreshToken",
+          "expiresIn",
+          "user"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "john.doe@example.com"
+          },
+          "companyId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "companyId"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "RoleResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          },
+          "isSystem": {
+            "type": "boolean"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "name",
+          "code",
+          "companyId",
+          "isSystem",
+          "isActive"
+        ]
+      },
+      "CreateRoleDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "companyId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "companyId"
+        ]
+      },
+      "AssignRoleDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "roleId": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "roleId"
+        ]
+      },
+      "CreateFieldDefinitionRequest": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateFieldGroupRequest": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateDocumentTypeRequest": {
+        "type": "object",
+        "properties": {}
+      },
+      "OrganizationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "name",
+          "code",
+          "isActive"
+        ]
+      },
+      "CreateCompanyDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "website": {
+            "type": "string"
+          },
+          "industry": {
+            "type": "string"
+          },
+          "registrationNumber": {
+            "type": "string"
+          },
+          "taxNumber": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "code"
+        ]
+      },
+      "CreateBranchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "isHeadquarters": {
+            "type": "boolean"
+          },
+          "addressLine1": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "country": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "isHeadquarters"
+        ]
+      },
+      "DepartmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "businessId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "parentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "businessId",
+          "name",
+          "code",
+          "isActive"
+        ]
+      },
+      "CreateDepartmentDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "parentId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "code"
+        ]
+      },
+      "CreateDesignationDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "level": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "level"
+        ]
+      },
+      "CreateCandidateRequest": {
+        "type": "object",
+        "properties": {
+          "profileId": {
+            "type": "string",
+            "description": "Profile ID of the person being added as a candidate"
+          },
+          "source": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "appliedDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "profileId"
+        ]
+      },
+      "UpdateCandidateRequest": {
+        "type": "object",
+        "properties": {
+          "notes": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string"
+          },
+          "referredBy": {
+            "type": "string"
+          },
+          "appliedDate": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectCandidateRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Rejection reason"
+          }
+        }
+      },
+      "WithdrawCandidateRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "description": "Withdrawal reason"
+          }
+        }
+      },
+      "ConvertCandidateRequest": {
+        "type": "object",
+        "properties": {
+          "joinedDate": {
+            "type": "string",
+            "description": "Date the employee officially joins"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "designationId": {
+            "type": "string"
+          },
+          "branchId": {
+            "type": "string"
+          },
+          "reportsToId": {
+            "type": "string"
+          },
+          "employeeNumber": {
+            "type": "string"
+          },
+          "probationEndDate": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "joinedDate"
+        ]
+      },
+      "UpdateEmployeeRequest": {
+        "type": "object",
+        "properties": {
+          "departmentId": {
+            "type": "string"
+          },
+          "designationId": {
+            "type": "string"
+          },
+          "branchId": {
+            "type": "string"
+          },
+          "reportsToId": {
+            "type": "string"
+          },
+          "employeeNumber": {
+            "type": "string"
+          }
+        }
+      },
+      "TerminateEmployeeRequest": {
+        "type": "object",
+        "properties": {
+          "terminationDate": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "terminationDate",
+          "reason"
+        ]
+      },
+      "CreateWorkflowDefinitionRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "processCode": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "entityType"
+        ]
+      },
+      "UpdateWorkflowDefinitionRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      },
+      "AddWorkflowStageRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "displayOrder": {
+            "type": "number"
+          },
+          "isTerminal": {
+            "type": "boolean"
+          },
+          "isFinal": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "code",
+          "displayOrder"
+        ]
+      },
+      "StartWorkflowInstanceRequest": {
+        "type": "object",
+        "properties": {
+          "workflowDefinitionId": {
+            "type": "string"
+          },
+          "entityType": {
+            "type": "string"
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "candidateId": {
+            "type": "string"
+          },
+          "employeeId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "workflowDefinitionId",
+          "entityType",
+          "entityId"
+        ]
+      },
+      "AdvanceWorkflowStageRequest": {
+        "type": "object",
+        "properties": {
+          "nextStageId": {
+            "type": "string"
+          },
+          "remarks": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nextStageId"
+        ]
+      },
+      "ApproveWorkflowStageRequest": {
+        "type": "object",
+        "properties": {
+          "remarks": {
+            "type": "string"
+          }
+        }
+      },
+      "RejectWorkflowStageRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "ReturnWorkflowStageRequest": {
+        "type": "object",
+        "properties": {
+          "targetStageId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "targetStageId",
+          "reason"
+        ]
+      },
+      "CancelWorkflowInstanceRequest": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "CreateTemplateRequestDto": {
+        "type": "object",
+        "properties": {
+          "documentTypeId": {
+            "type": "string",
+            "description": "The unique business ID of the document type"
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name of the template"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the template"
+          }
+        },
+        "required": [
+          "documentTypeId",
+          "name"
+        ]
+      },
+      "CreatePlaceholderDto": {
+        "type": "object",
+        "properties": {
+          "fieldDefinitionId": {
+            "type": "string"
+          },
+          "placeholderKey": {
+            "type": "string"
+          },
+          "isRequired": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "fieldDefinitionId",
+          "placeholderKey",
+          "isRequired",
+          "displayOrder"
+        ]
+      },
+      "CreateTemplateVersionRequestDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "The HTML string content for the version"
+          },
+          "contentType": {
+            "type": "string",
+            "description": "MIME content type",
+            "default": "html"
+          },
+          "placeholders": {
+            "description": "Array of detected placeholders",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreatePlaceholderDto"
+            }
+          },
+          "notes": {
+            "type": "string",
+            "description": "Version notes"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "PlaceholderMappingDto": {
+        "type": "object",
+        "properties": {
+          "placeholderKey": {
+            "type": "string",
+            "description": "The exact placeholder key found in the document"
+          },
+          "fieldDefinitionId": {
+            "type": "string",
+            "description": "The target Field Definition ID in the system"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "description": "Whether this placeholder must be provided to generate a document"
+          },
+          "displayOrder": {
+            "type": "number",
+            "description": "Display order in the UI"
+          }
+        },
+        "required": [
+          "placeholderKey",
+          "fieldDefinitionId",
+          "isRequired"
+        ]
+      },
+      "MapPlaceholdersRequestDto": {
+        "type": "object",
+        "properties": {
+          "mappings": {
+            "description": "Array of placeholder mappings",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlaceholderMappingDto"
+            }
+          }
+        },
+        "required": [
+          "mappings"
+        ]
+      },
+      "GenerateDocumentRequestDto": {
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "description": "The unique template ID to generate from"
+          },
+          "profileId": {
+            "type": "string",
+            "description": "The ID of the candidate or employee profile"
+          },
+          "candidateId": {
+            "type": "string",
+            "description": "The candidate ID, if applicable"
+          },
+          "employeeId": {
+            "type": "string",
+            "description": "The employee ID, if applicable"
+          },
+          "workflowInstanceId": {
+            "type": "string",
+            "description": "The workflow instance ID driving this generation"
+          },
+          "workflowStageId": {
+            "type": "string",
+            "description": "The workflow stage ID driving this generation"
+          }
+        },
+        "required": [
+          "templateId",
+          "profileId"
+        ]
+      }
+    }
+  }
+}

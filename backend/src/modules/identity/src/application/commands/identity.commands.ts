@@ -17,7 +17,7 @@ export class LoginCommand implements ICommand {
   constructor(
     public readonly email: string,
     public readonly password: string,
-    public readonly companyId: string,
+    public readonly companyId?: string,
   ) {}
 }
 

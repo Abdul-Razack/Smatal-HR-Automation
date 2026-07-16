@@ -101,7 +101,7 @@ export class GeneratedDocumentAggregate extends AggregateRoot<GeneratedDocumentP
 
   public markAsGenerated(
     performedBy: string,
-    snapshot: DocumentSnapshotVO,
+    snapshots: DocumentSnapshotVO[],
   ): void {
     const validStatuses = [
       DocumentGenerationStatus.GENERATING,
@@ -114,7 +114,7 @@ export class GeneratedDocumentAggregate extends AggregateRoot<GeneratedDocumentP
     this.props.status = DocumentGenerationStatus.GENERATED;
     this.props.generatedAt = new Date();
     this.props.generatedBy = performedBy;
-    this.props.snapshots.push(snapshot);
+    this.props.snapshots.push(...snapshots);
   }
 
   public fail(performedBy: string): void {

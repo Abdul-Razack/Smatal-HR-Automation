@@ -1,33 +1,85 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { QueryHandler, IQueryHandler } from '@nestjs/cqrs';
 import { ListEmployeesQuery } from './ListEmployeesQuery';
-import { IEmployeeRepository } from '../../../domain/repositories/IEmployeeRepository';
+import { PrismaService } from '../../../../../../infrastructure/database/prisma.service';
 import { IPaginatedResult } from '../../../../../../kernel/repositories/repository.contracts';
 import { EmployeeResponseDto } from '../../dto/responses/EmployeeResponseDto';
-import { EmployeeMapper } from '../../../infrastructure/mappers/EmployeeMapper';
 
 @QueryHandler(ListEmployeesQuery)
 @Injectable()
 export class ListEmployeesHandler implements IQueryHandler<ListEmployeesQuery> {
-  constructor(
-    @Inject('IEmployeeRepository')
-    private readonly employeeRepository: IEmployeeRepository,
-    private readonly employeeMapper: EmployeeMapper,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async execute(
     query: ListEmployeesQuery,
   ): Promise<IPaginatedResult<EmployeeResponseDto>> {
-    const result = await this.employeeRepository.listByCompany(
-      query.companyId,
-      query.status,
-      query.departmentId,
-      { page: query.page, limit: query.limit },
-      { field: query.sortField, direction: query.sortDirection },
-    );
+    const where: any = { companyId: query.companyId, isDeleted: false };
+    if (query.status) where.status = query.status;
+    if (query.departmentId) where.departmentId = query.departmentId;
+
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 20, 100);
+    const skip = (page - 1) * limit;
+    const orderBy = query.sortField
+      ? { [query.sortField]: query.sortDirection }
+      : { createdAt: 'desc' as const };
+
+    const [records, total] = await Promise.all([
+      this.prisma.employee.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        include: {
+          profile: {
+            select: { firstName: true, lastName: true, personalEmail: true, phone: true, profilePhoto: true }
+          },
+          department: { select: { id: true, name: true } },
+          designation: { select: { id: true, name: true } }
+        }
+      }),
+      this.prisma.employee.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    const data = records.map((employee: any) => {
+      const dto = new EmployeeResponseDto();
+      dto.id = employee.id;
+      dto.businessId = employee.businessId;
+      dto.companyId = employee.companyId;
+      dto.profileId = employee.profileId;
+      dto.status = employee.status as any;
+      dto.joinedDate = employee.joinedDate;
+      dto.departmentId = employee.departmentId;
+      dto.designationId = employee.designationId;
+      dto.branchId = employee.branchId;
+      dto.reportsToId = employee.reportsToId;
+      dto.employeeNumber = employee.employeeNumber;
+      dto.confirmationDate = employee.confirmationDate;
+      dto.probationEndDate = employee.probationEndDate;
+      dto.terminationDate = employee.terminationDate;
+      dto.version = employee.version;
+      dto.createdAt = employee.createdAt;
+      dto.updatedAt = employee.updatedAt;
+      dto.createdBy = employee.createdBy;
+      dto.updatedBy = employee.updatedBy;
+      dto.isDeleted = employee.isDeleted;
+
+      dto.profile = employee.profile;
+      dto.department = employee.department;
+      dto.designation = employee.designation;
+      return dto;
+    });
+
     return {
-      ...result,
-      data: result.data.map((e) => this.employeeMapper.toResponseDto(e)),
+      data,
+      total,
+      page,
+      limit,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
     };
   }
 }

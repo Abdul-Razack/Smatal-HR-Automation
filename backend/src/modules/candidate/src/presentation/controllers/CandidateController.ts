@@ -40,6 +40,7 @@ import { DeleteCandidateCommand } from '../../application/commands/DeleteCandida
 import { ConvertCandidateCommand } from '../../application/commands/ConvertCandidate/ConvertCandidateCommand';
 import { GetCandidateQuery } from '../../application/queries/GetCandidate/GetCandidateQuery';
 import { ListCandidatesQuery } from '../../application/queries/ListCandidates/ListCandidatesQuery';
+import { GetCandidateTimelineQuery } from '../../application/queries/GetCandidateTimeline/GetCandidateTimelineQuery';
 import { CandidateStatus } from '../../domain/enums/CandidateStatus';
 import { Result } from '../../../../../kernel/result/Result';
 
@@ -233,5 +234,10 @@ export class CandidateController {
       new DeleteCandidateCommand(id, req.user.companyId, req.user.userId),
     );
     if (result.isFailure) return { error: result.errorValue };
+  }
+  @Get(':id/timeline')
+  @ApiOperation({ summary: 'Get candidate timeline history' })
+  async getCandidateTimeline(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.queryBus.execute(new GetCandidateTimelineQuery(id, req.user.companyId));
   }
 }

@@ -20,6 +20,9 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
       } else if (query.dashboardType === 'DOC') {
         const stats = await this.getDocStats(query.companyId);
         return Result.ok(stats);
+      } else if (query.dashboardType === 'ATS') {
+        const stats = await this.getATSStats(query.companyId);
+        return Result.ok(stats);
       }
 
       return Result.fail('Invalid dashboard type');
@@ -33,18 +36,22 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
       where: { companyId, isDeleted: false },
     });
     const activeCandidates = await this.prisma.candidate.count({
-      where: { companyId, isDeleted: false, candidateStatus: 'ACTIVE' },
+      where: {
+        companyId,
+        isDeleted: false,
+        status: { in: ['APPLIED', 'SCREENING', 'INTERVIEWING', 'SELECTED'] },
+      },
     });
     const convertedCandidates = await this.prisma.candidate.count({
-      where: { companyId, isDeleted: false, candidateStatus: 'CONVERTED' },
+      where: { companyId, isDeleted: false, status: 'CONVERTED' },
     });
     const activeEmployees = await this.prisma.employee.count({
-      where: { companyId, isDeleted: false, isActive: true },
+      where: { companyId, isDeleted: false, status: 'ACTIVE' },
     });
 
     // We can join with workflow to get workflow counts
     const runningWorkflows = await this.prisma.workflowInstance.count({
-      where: { companyId, status: 'RUNNING' },
+      where: { companyId, status: 'IN_PROGRESS' },
     });
     const completedWorkflows = await this.prisma.workflowInstance.count({
       where: { companyId, status: 'COMPLETED' },
@@ -105,6 +112,51 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
 
     return {
       documentsByType: docTypes,
+    };
+  }
+
+  private async getATSStats(companyId: string) {
+    const totalCandidates = await this.prisma.candidate.count({
+      where: { companyId, isDeleted: false },
+    });
+
+    // We can join with offer to get offer counts
+    const offersPending = await this.prisma.offerLetter.count({
+      where: { companyId, status: 'GENERATED' },
+    });
+    
+    const offersAccepted = await this.prisma.offerLetter.count({
+      where: { companyId, status: 'ACCEPTED' },
+    });
+
+    const interviewsToday = await this.prisma.interviewSchedule.count({
+      where: {
+        companyId,
+        scheduledAt: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          lt: new Date(new Date().setHours(23, 59, 59, 999)),
+        },
+      },
+    });
+
+    const recentCandidates = await this.prisma.candidate.findMany({
+      where: { companyId, isDeleted: false },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+      include: { profile: true },
+    });
+
+    return {
+      totalCandidates,
+      interviewsToday,
+      offersPending,
+      offersAccepted,
+      recentCandidates: recentCandidates.map((c: any) => ({
+        id: c.id,
+        name: `${c.profile.firstName} ${c.profile.lastName}`,
+        status: c.status,
+        appliedAt: c.createdAt,
+      })),
     };
   }
 }

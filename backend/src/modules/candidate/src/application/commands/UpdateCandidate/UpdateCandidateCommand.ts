@@ -9,5 +9,6 @@ export class UpdateCandidateCommand implements ICommand {
     public readonly source?: string | null,
     public readonly referredBy?: string | null,
     public readonly appliedDate?: Date | null,
+    public readonly dynamicFields?: { fieldDefinitionId: string; value: any }[],
   ) {}
 }

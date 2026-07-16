@@ -12,9 +12,7 @@ import { DocumentTypeController } from './src/presentation/controllers/DocumentT
 // Runtime
 import { FieldRuntimeService } from './src/runtime/FieldRuntimeService';
 
-// Infrastructure
 import { BusinessIdGenerator } from '../../infrastructure/database/BusinessIdGenerator';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { PrismaUnitOfWork } from '../../infrastructure/database/transaction/PrismaUnitOfWork';
 
 const CommandHandlers = [
@@ -46,7 +44,6 @@ const Repositories = [
     ...Repositories,
     FieldRuntimeService,
     BusinessIdGenerator,
-    PrismaService,
     PrismaUnitOfWork,
     { provide: 'IUnitOfWork', useClass: PrismaUnitOfWork },
     { provide: 'IBusinessIdGenerator', useClass: BusinessIdGenerator },

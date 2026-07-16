@@ -18,8 +18,6 @@ import { WorkflowSeederService } from './src/application/services/WorkflowSeeder
 // Command Handlers
 import {
   CandidateWorkflowTriggerHandler,
-  EmployeeWorkflowTriggerHandler,
-  NewHireWorkflowTriggerHandler,
 } from './src/application/events/LifecycleEventHandlers';
 
 import { CreateWorkflowDefinitionHandler } from './src/application/commands/CreateWorkflowDefinition/CreateWorkflowDefinitionHandler';
@@ -35,6 +33,9 @@ import { RejectWorkflowStageHandler } from './src/application/commands/RejectWor
 import { ReturnWorkflowStageHandler } from './src/application/commands/ReturnWorkflowStage/ReturnWorkflowStageHandler';
 import { CancelWorkflowInstanceHandler } from './src/application/commands/CancelWorkflowInstance/CancelWorkflowInstanceHandler';
 
+// Sagas
+import { WorkflowOrchestrator } from './src/application/sagas/WorkflowOrchestrator';
+
 // Query Handlers
 import { GetWorkflowDefinitionHandler } from './src/application/queries/GetWorkflowDefinition/GetWorkflowDefinitionHandler';
 import { ListWorkflowDefinitionsHandler } from './src/application/queries/ListWorkflowDefinitions/ListWorkflowDefinitionsHandler';
@@ -48,8 +49,9 @@ import { WorkflowInstanceController } from './src/presentation/controllers/Workf
 
 // Infrastructure
 import { BusinessIdGenerator } from '../../infrastructure/database/BusinessIdGenerator';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { PrismaUnitOfWork } from '../../infrastructure/database/transaction/PrismaUnitOfWork';
+import { DatabaseModule } from '../../infrastructure/database/database.module';
+import { BullModule } from '@nestjs/bullmq';
 
 const CommandHandlers = [
   CreateWorkflowDefinitionHandler,
@@ -76,8 +78,7 @@ const QueryHandlers = [
 
 const EventHandlers = [
   CandidateWorkflowTriggerHandler,
-  EmployeeWorkflowTriggerHandler,
-  NewHireWorkflowTriggerHandler,
+  WorkflowOrchestrator,
 ];
 
 const Repositories = [
@@ -92,7 +93,13 @@ const Repositories = [
 ];
 
 @Module({
-  imports: [CqrsModule],
+  imports: [
+    CqrsModule,
+    DatabaseModule,
+    BullModule.registerQueue({ name: 'document.queue' }),
+    BullModule.registerQueue({ name: 'notification.queue' }),
+    BullModule.registerQueue({ name: 'audit.queue' }),
+  ],
   controllers: [WorkflowDefinitionController, WorkflowInstanceController],
   providers: [
     ...CommandHandlers,
@@ -103,7 +110,6 @@ const Repositories = [
     WorkflowDefinitionMapper,
     WorkflowInstanceMapper,
     BusinessIdGenerator,
-    PrismaService,
     PrismaUnitOfWork,
     WorkflowSeederService,
     { provide: 'IUnitOfWork', useClass: PrismaUnitOfWork },

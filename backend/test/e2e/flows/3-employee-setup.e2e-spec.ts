@@ -23,7 +23,7 @@ describe('Flow 3: Employee Setup (e2e)', () => {
     const testDb = new TestDatabase(app.get(PrismaService));
 
     const company = await testDb.getSeedCompany();
-    companyId = company.id;
+    companyId = company?.id || '';
 
     const prisma = app.get(PrismaService);
 

@@ -68,3 +68,30 @@ export class EmployeeDeletedEvent implements IDomainEvent {
     return new Identifier<string>(this.employeeId);
   }
 }
+
+export class EmployeePromotedEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+  constructor(
+    public readonly employeeId: string,
+    public readonly companyId: string,
+    public readonly newDesignationId: string,
+    public readonly performedBy: string,
+  ) {}
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.employeeId);
+  }
+}
+
+export class EmployeeTransferredEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+  constructor(
+    public readonly employeeId: string,
+    public readonly companyId: string,
+    public readonly newDepartmentId: string | null,
+    public readonly newBranchId: string | null,
+    public readonly performedBy: string,
+  ) {}
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.employeeId);
+  }
+}

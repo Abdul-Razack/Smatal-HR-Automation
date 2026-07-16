@@ -96,12 +96,12 @@ export class TemplateAggregate extends AggregateRoot<TemplateProps> {
         `Version ${versionId} not found in template ${this.id.toValue()}`,
       );
     }
-    // Rollback any currently active version
+    // Deprecate any currently active version
     const activeVersion = this.props.versions.find(
       (v) => v.status === TemplateVersionStatus.PUBLISHED,
     );
     if (activeVersion && activeVersion.id.toValue() !== versionId) {
-      activeVersion.rollback(performedBy);
+      activeVersion.deprecate(performedBy);
     }
     versionToPublish.publish(performedBy);
     this.props.status = TemplateStatus.ACTIVE;

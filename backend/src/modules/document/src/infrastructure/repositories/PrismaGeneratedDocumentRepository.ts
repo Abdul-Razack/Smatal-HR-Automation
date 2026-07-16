@@ -31,6 +31,18 @@ export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepo
     return this.mapper.toDomain(record);
   }
 
+  async findAll(
+    companyId: string,
+    filters?: { profileId?: string; candidateId?: string; employeeId?: string },
+  ): Promise<GeneratedDocumentAggregate[]> {
+    const records = await this.prisma.generatedDocument.findMany({
+      where: { companyId, ...filters },
+      include: { snapshots: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   async save(document: GeneratedDocumentAggregate): Promise<void> {
     const data = this.mapper.toPersistence(document);
     const exists = await this.prisma.generatedDocument.findUnique({

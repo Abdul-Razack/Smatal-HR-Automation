@@ -20,6 +20,9 @@ import { GetNotificationsHandler } from './src/application/queries/GetNotificati
 // Controllers
 import { NotificationController } from './src/presentation/controllers/NotificationController';
 
+// Workers
+import { NotificationWorker } from './src/application/workers/NotificationWorker';
+
 const CommandHandlers = [
   CreateNotificationHandler,
   MarkNotificationReadHandler,
@@ -46,6 +49,7 @@ const Repositories = [
     NotificationMapper,
     PrismaUnitOfWork,
     BusinessIdGenerator,
+    NotificationWorker,
   ],
   exports: ['INotificationRepository'],
 })

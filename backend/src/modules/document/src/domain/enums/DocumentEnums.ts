@@ -7,6 +7,7 @@ export enum TemplateStatus {
 export enum TemplateVersionStatus {
   DRAFT = 'DRAFT',
   PUBLISHED = 'PUBLISHED',
+  DEPRECATED = 'DEPRECATED',
   ARCHIVED = 'ARCHIVED',
   ROLLED_BACK = 'ROLLED_BACK',
 }
@@ -22,5 +23,15 @@ export enum DocumentGenerationStatus {
   REJECTED = 'REJECTED',
   ARCHIVED = 'ARCHIVED',
   VOIDED = 'VOIDED',
+  FAILED = 'FAILED',
+}
+
+// V2: Tracks the lifecycle of a DOCX import process
+export enum TemplateImportStatus {
+  PENDING = 'PENDING',
+  SCANNING = 'SCANNING',
+  SCANNED = 'SCANNED',
+  MAPPING_REQUIRED = 'MAPPING_REQUIRED',
+  MAPPED = 'MAPPED',
   FAILED = 'FAILED',
 }

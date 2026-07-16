@@ -17,12 +17,19 @@ export class GlobalSearchHandler implements IQueryHandler<GlobalSearchQuery> {
       // Search Profiles (Candidates & Employees)
       const profiles = await this.prisma.profile.findMany({
         where: {
-          companyId: query.companyId,
           OR: [
-            { firstName: { contains: query.keyword, mode: 'insensitive' } },
-            { lastName: { contains: query.keyword, mode: 'insensitive' } },
-            { email: { contains: query.keyword, mode: 'insensitive' } },
+            { employees: { some: { companyId: query.companyId } } },
+            { candidates: { some: { companyId: query.companyId } } },
           ],
+          AND: {
+            OR: [
+              { firstName: { contains: query.keyword, mode: 'insensitive' } },
+              { lastName: { contains: query.keyword, mode: 'insensitive' } },
+              {
+                personalEmail: { contains: query.keyword, mode: 'insensitive' },
+              },
+            ],
+          },
         },
         take: query.limit,
       });
@@ -31,9 +38,9 @@ export class GlobalSearchHandler implements IQueryHandler<GlobalSearchQuery> {
         results.push({
           type: 'PROFILE',
           id: p.id,
-          businessId: p.businessId,
+          businessId: p.id,
           title: `${p.firstName} ${p.lastName}`,
-          subtitle: p.email,
+          subtitle: p.personalEmail,
         });
       }
 
@@ -52,7 +59,7 @@ export class GlobalSearchHandler implements IQueryHandler<GlobalSearchQuery> {
           id: w.id,
           businessId: w.businessId,
           title: w.name,
-          subtitle: w.processCode,
+          subtitle: w.entityType,
         });
       }
 

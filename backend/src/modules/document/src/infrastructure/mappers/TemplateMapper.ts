@@ -6,6 +6,7 @@ import { Identifier } from '../../../../../kernel/domain/Identifier';
 import {
   TemplateStatus,
   TemplateVersionStatus,
+  TemplateImportStatus,
 } from '../../domain/enums/DocumentEnums';
 
 export class TemplateMapper implements Mapper<TemplateAggregate, any, any> {
@@ -26,7 +27,7 @@ export class TemplateMapper implements Mapper<TemplateAggregate, any, any> {
           businessId: v.businessId,
           templateId: v.templateId,
           versionNumber: v.versionNumber,
-          content: v.content,
+          content: v.content ?? '',
           contentType: v.contentType,
           status: v.status as TemplateVersionStatus,
           publishedAt: v.publishedAt,
@@ -39,6 +40,14 @@ export class TemplateMapper implements Mapper<TemplateAggregate, any, any> {
           updatedAt: v.updatedAt,
           createdBy: v.createdBy,
           updatedBy: v.updatedBy,
+          // V2 DOCX import fields
+          storageUri: v.storageUri ?? null,
+          originalFilename: v.originalFilename ?? null,
+          mimeType: v.mimeType ?? null,
+          fileSize: v.fileSize ?? null,
+          checksum: v.checksum ?? null,
+          placeholderCount: v.placeholderCount ?? null,
+          importStatus: (v.importStatus as TemplateImportStatus) ?? null,
         },
         new Identifier<string>(v.id),
       );
@@ -96,6 +105,14 @@ export class TemplateMapper implements Mapper<TemplateAggregate, any, any> {
         updatedAt: v.updatedAt,
         createdBy: v.createdBy,
         updatedBy: v.updatedBy,
+        // V2 DOCX import fields
+        storageUri: v.storageUri ?? null,
+        originalFilename: v.originalFilename ?? null,
+        mimeType: v.mimeType ?? null,
+        fileSize: v.fileSize ?? null,
+        checksum: v.checksum ?? null,
+        placeholderCount: v.placeholderCount ?? null,
+        importStatus: v.importStatus ?? null,
         placeholders: v.placeholders.map((p) => ({
           id: p.id,
           fieldDefinitionId: p.fieldDefinitionId,
@@ -118,7 +135,11 @@ export class TemplateMapper implements Mapper<TemplateAggregate, any, any> {
       versions: domain.versions.map((v) => ({
         id: v.id.toValue(),
         versionNumber: v.versionNumber,
+        contentType: v.contentType,
         status: v.status,
+        importStatus: v.importStatus,
+        placeholderCount: v.placeholderCount,
+        originalFilename: v.originalFilename,
         publishedAt: v.publishedAt,
       })),
     };

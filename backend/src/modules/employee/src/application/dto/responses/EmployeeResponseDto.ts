@@ -21,4 +21,41 @@ export class EmployeeResponseDto {
   createdBy: string;
   updatedBy: string;
   isDeleted: boolean;
+
+  // Joined / Resolved data
+  profile?: {
+    firstName: string;
+    lastName: string;
+    personalEmail: string;
+    phone?: string | null;
+    profilePhoto?: string | null;
+  } | null;
+
+  department?: {
+    id: string;
+    name: string;
+  } | null;
+
+  designation?: {
+    id: string;
+    name: string;
+  } | null;
+
+  branch?: {
+    id: string;
+    name: string;
+  } | null;
+
+  manager?: {
+    id: string;
+    employeeNumber?: string | null;
+    name: string;
+  } | null;
+
+  dynamicFields?: {
+    fieldDefinitionId: string;
+    key: string;
+    label: string;
+    value: any;
+  }[];
 }

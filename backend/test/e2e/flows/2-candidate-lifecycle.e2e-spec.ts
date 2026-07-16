@@ -18,7 +18,7 @@ describe('Flow 2: Candidate Lifecycle (e2e)', () => {
     app = await TestHelpers.bootstrapNestApplication();
     const testDb = new TestDatabase(app.get(PrismaService));
     const company = await testDb.getSeedCompany();
-    companyId = company.id;
+    companyId = company?.id || '';
 
     // Create a mock profile
     const prisma = app.get(PrismaService);

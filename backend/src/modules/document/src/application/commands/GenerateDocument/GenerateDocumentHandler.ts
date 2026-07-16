@@ -10,7 +10,7 @@ import { DocumentDomainService } from '../../../domain/services/DocumentDomainSe
 import { GeneratedDocumentAggregate } from '../../../domain/aggregates/GeneratedDocumentAggregate';
 import { DocumentGenerationStatus } from '../../../domain/enums/DocumentEnums';
 import { FieldRuntimeService } from '../../../../../master/src/runtime/FieldRuntimeService';
-import { DocumentGeneratorService } from '../../../infrastructure/services/DocumentGeneratorService';
+import { ImmediateDispatcher } from '../../dispatchers/ImmediateDispatcher';
 
 @CommandHandler(GenerateDocumentCommand)
 @Injectable()
@@ -27,7 +27,7 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
     private readonly idGenerator: IBusinessIdGenerator,
     private readonly domainService: DocumentDomainService,
     private readonly fieldRegistry: FieldRuntimeService,
-    private readonly documentGenerator: DocumentGeneratorService,
+    private readonly dispatcher: ImmediateDispatcher,
   ) {}
 
   async execute(command: GenerateDocumentCommand): Promise<Result<string>> {
@@ -88,23 +88,34 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
         snapshots: [],
       });
 
-      // Compile HTML from template + resolved fields
-      const compiledHtml = await this.documentGenerator.compileHtml(
-        activeVersion,
-        resolvedValues,
-      );
-      // Generate PDF and create immutable snapshot
-      const snapshot = await this.documentGenerator.generatePdfSnapshot(
-        document,
-        compiledHtml,
-        command.performedBy,
-      );
-
-      // Transition to GENERATED and attach snapshot
-      document.markAsGenerated(command.performedBy, snapshot);
-
+      // Save initial GENERATING state
       await this.unitOfWork.withTransaction(async () => {
         await this.documentRepo.save(document);
+      });
+
+      // Construct context
+      const context = {
+        tenantId: command.companyId, // Assuming 1-to-1 for now
+        companyId: command.companyId,
+        profileId: command.profileId,
+        employeeId: command.employeeId,
+        candidateId: command.candidateId,
+        workflowInstanceId: command.workflowInstanceId,
+        placeholders: resolvedValues,
+        locale: 'en-US',
+        timezone: 'UTC',
+        currency: 'USD',
+        generatedDate: new Date(),
+        metadata: {},
+      };
+
+      // Dispatch generation job (Sync for now)
+      await this.dispatcher.dispatch({
+        document,
+        template,
+        activeVersion,
+        context,
+        performedBy: command.performedBy,
       });
 
       return Result.ok<string>(document.id.toValue() as string);

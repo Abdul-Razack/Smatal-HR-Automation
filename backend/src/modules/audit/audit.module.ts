@@ -19,6 +19,9 @@ import { GetAuditHistoryHandler } from './src/application/queries/GetAuditHistor
 // Controllers
 import { AuditController } from './src/presentation/controllers/AuditController';
 
+// Workers
+import { AuditWorker } from './src/application/workers/AuditWorker';
+
 const CommandHandlers = [CreateAuditLogHandler];
 
 const QueryHandlers = [GetAuditHistoryHandler];
@@ -39,6 +42,7 @@ const Repositories = [
     AuditMapper,
     PrismaUnitOfWork,
     BusinessIdGenerator,
+    AuditWorker,
   ],
   exports: ['IAuditRepository'],
 })

@@ -14,7 +14,7 @@ describe('Flow 1: Authentication (e2e)', () => {
     app = await TestHelpers.bootstrapNestApplication();
     const testDb = new TestDatabase(app.get(PrismaService));
     const company = await testDb.getSeedCompany();
-    companyId = company.id;
+    companyId = company?.id || '';
   });
 
   afterAll(async () => {

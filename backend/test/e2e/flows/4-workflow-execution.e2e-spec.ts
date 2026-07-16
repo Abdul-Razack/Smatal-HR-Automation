@@ -21,14 +21,14 @@ describe('Flow 4: Workflow Execution (e2e)', () => {
     const testDb = new TestDatabase(app.get(PrismaService));
 
     const company = await testDb.getSeedCompany();
-    companyId = company.id;
+    companyId = company?.id || '';
 
     const wfDef = await testDb.getWorkflowDefinition('WFD-001');
-    workflowDefinitionId = wfDef.id;
+    workflowDefinitionId = wfDef?.id || '';
 
     const stages = await testDb.getWorkflowStages(workflowDefinitionId);
-    itStageId = stages.find((s: any) => s.code === 'IT')?.id;
-    orientStageId = stages.find((s: any) => s.code === 'ORIENT')?.id;
+    itStageId = stages.find((s: any) => s.code === 'IT')?.id || '';
+    orientStageId = stages.find((s: any) => s.code === 'ORIENT')?.id || '';
 
     const prisma = app.get(PrismaService);
     const uniqueEmail = TestDataFactory.createEmail('jane.worker');

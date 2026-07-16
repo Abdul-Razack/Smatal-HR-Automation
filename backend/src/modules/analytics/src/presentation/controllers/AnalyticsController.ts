@@ -11,7 +11,7 @@ export class AnalyticsController {
   @Get('dashboard')
   async getDashboard(
     @Headers('x-company-id') companyId: string,
-    @Query('type') type: 'HR' | 'ORG' | 'DOC',
+    @Query('type') type: 'HR' | 'ORG' | 'DOC' | 'ATS',
   ) {
     const result = await this.queryBus.execute(
       new GetDashboardQuery(companyId, type || 'HR'),
@@ -52,7 +52,15 @@ export class AnalyticsController {
       new GetReportQuery(companyId, reportType, actualFilters),
     );
 
-    if (result.isFailure) throw new Error(result.error);
+    if (result.isFailure) {
+      console.error('AnalyticsController getReport Error:', result.error);
+      const { BadRequestException } = require('@nestjs/common');
+      throw new BadRequestException(
+        typeof result.error === 'string'
+          ? result.error
+          : JSON.stringify(result.error),
+      );
+    }
     return result.getValue();
   }
 }

@@ -8,7 +8,8 @@ import { setupCors } from './cors';
 import { setupHelmet } from './helmet';
 import { setupSwagger } from './swagger';
 import { setupValidation } from './validation';
-import * as compression from 'compression';
+
+const compression = require('compression');
 import { TransformInterceptor } from './interceptors/TransformInterceptor';
 import { GlobalExceptionFilter } from './filters/GlobalExceptionFilter';
 import { AppLogger } from '../observability/logging/logger.service';
@@ -16,7 +17,7 @@ import { AppLogger } from '../observability/logging/logger.service';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   const configService = app.get(ConfigService);
-  const logger = app.get(AppLogger);
+  const logger = await app.resolve(AppLogger);
   app.useLogger(logger);
 
   // Global Prefix & Versioning

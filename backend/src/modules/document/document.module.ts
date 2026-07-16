@@ -15,35 +15,81 @@ import { PrismaGeneratedDocumentRepository } from './src/infrastructure/reposito
 import { PrismaUnitOfWork } from '../../infrastructure/database/transaction/PrismaUnitOfWork';
 import { BusinessIdGenerator } from '../../infrastructure/database/BusinessIdGenerator';
 
-// Services
+// Services (V1 — unchanged)
 import { DocumentDomainService } from './src/domain/services/DocumentDomainService';
-import { DocumentGeneratorService } from './src/infrastructure/services/DocumentGeneratorService';
 
-// Command Handlers
+// V2: Storage infrastructure
+import { LocalStorageAdapter } from '../../infrastructure/storage/LocalStorageAdapter';
+import { S3StorageAdapter } from '../../infrastructure/storage/S3StorageAdapter';
+import { StorageFactory } from '../../infrastructure/storage/StorageFactory';
+import { PdfConverterService } from './src/infrastructure/services/PdfConverterService';
+
+// V2: Generators
+import { HtmlGeneratorStrategy } from './src/infrastructure/generators/HtmlGeneratorStrategy';
+import { DocxGeneratorStrategy } from './src/infrastructure/generators/DocxGeneratorStrategy';
+import { DocumentGeneratorFactory } from './src/infrastructure/generators/DocumentGeneratorFactory';
+
+// V2: Document parsers
+import { PlaceholderScanner } from './src/infrastructure/parsers/PlaceholderScanner';
+import { DocxParser } from './src/infrastructure/parsers/DocxParser';
+
+// Command Handlers (V1 — unchanged)
 import { CreateDocumentTypeHandler } from './src/application/commands/CreateDocumentType/CreateDocumentTypeHandler';
 import { CreateTemplateHandler } from './src/application/commands/CreateTemplate/CreateTemplateHandler';
 import { CreateTemplateVersionHandler } from './src/application/commands/CreateTemplateVersion/CreateTemplateVersionHandler';
 import { PublishTemplateVersionHandler } from './src/application/commands/PublishTemplateVersion/PublishTemplateVersionHandler';
 import { GenerateDocumentHandler } from './src/application/commands/GenerateDocument/GenerateDocumentHandler';
 
-// Query Handlers
+// Command Handlers (V2 — new)
+import { ImportTemplateVersionHandler } from './src/application/commands/ImportTemplateVersion/ImportTemplateVersionHandler';
+import { MapTemplatePlaceholdersHandler } from './src/application/commands/MapTemplatePlaceholders/MapTemplatePlaceholdersHandler';
+
+// Query Handlers (V1 — unchanged)
 import { GetTemplateHandler } from './src/application/queries/GetTemplate/GetTemplateHandler';
 import { GetGeneratedDocumentHandler } from './src/application/queries/GetGeneratedDocument/GetGeneratedDocumentHandler';
+import { GetAllGeneratedDocumentsHandler } from './src/application/queries/GetAllGeneratedDocuments/GetAllGeneratedDocumentsHandler';
+
+// Workers
+import { DocumentWorker } from './src/application/workers/DocumentWorker';
+
+// Query Handlers (V2 — new)
+import { GetTemplatePlaceholdersHandler } from './src/application/queries/GetTemplatePlaceholders/GetTemplatePlaceholdersHandler';
+import { GetAllTemplatesHandler } from './src/application/queries/GetAllTemplates/GetAllTemplatesHandler';
 
 // Controllers
 import { DocumentTypeController } from './src/presentation/controllers/DocumentTypeController';
 import { TemplateController } from './src/presentation/controllers/TemplateController';
 import { GeneratedDocumentController } from './src/presentation/controllers/GeneratedDocumentController';
+import { DocumentDownloadController } from './src/presentation/controllers/DocumentDownloadController';
+
+// V2: Phase 3 Orchestration
+import { GenerationOrchestrator } from './src/application/services/GenerationOrchestrator';
+import { ImmediateDispatcher } from './src/application/dispatchers/ImmediateDispatcher';
+import { TemplateLoader } from './src/infrastructure/services/TemplateLoader';
+import { GenerationValidator } from './src/domain/services/GenerationValidator';
+import { DocumentSnapshotBuilder } from './src/domain/builders/DocumentSnapshotBuilder';
 
 const CommandHandlers = [
+  // V1
   CreateDocumentTypeHandler,
   CreateTemplateHandler,
   CreateTemplateVersionHandler,
   PublishTemplateVersionHandler,
   GenerateDocumentHandler,
+  // V2
+  ImportTemplateVersionHandler,
+  MapTemplatePlaceholdersHandler,
 ];
 
-const QueryHandlers = [GetTemplateHandler, GetGeneratedDocumentHandler];
+const QueryHandlers = [
+  // V1
+  GetTemplateHandler,
+  GetGeneratedDocumentHandler,
+  GetAllGeneratedDocumentsHandler,
+  // V2
+  GetTemplatePlaceholdersHandler,
+  GetAllTemplatesHandler,
+];
 
 const Repositories = [
   {
@@ -65,24 +111,59 @@ const Repositories = [
     DocumentTypeController,
     TemplateController,
     GeneratedDocumentController,
+    DocumentDownloadController,
   ],
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,
     ...Repositories,
+    // Mappers
     DocumentTypeMapper,
     TemplateMapper,
     GeneratedDocumentMapper,
+    // Services (V1)
     DocumentDomainService,
-    DocumentGeneratorService,
+    PdfConverterService,
     PrismaUnitOfWork,
     BusinessIdGenerator,
+    // V2: Storage
+    LocalStorageAdapter,
+    S3StorageAdapter,
+    StorageFactory,
+    { provide: 'IStorageService', useClass: LocalStorageAdapter },
+    // V2: Parsers
+    PlaceholderScanner,
+    DocxParser,
+    // V2: Generators
+    HtmlGeneratorStrategy,
+    DocxGeneratorStrategy,
+    {
+      provide: 'DOCUMENT_GENERATOR_STRATEGIES',
+      useFactory: (
+        html: HtmlGeneratorStrategy,
+        docx: DocxGeneratorStrategy,
+      ) => [html, docx],
+      inject: [HtmlGeneratorStrategy, DocxGeneratorStrategy],
+    },
+    DocumentGeneratorFactory,
+    // V2: Orchestration (Phase 3)
+    GenerationOrchestrator,
+    ImmediateDispatcher,
+    TemplateLoader,
+    GenerationValidator,
+    DocumentSnapshotBuilder,
+    DocumentWorker,
   ],
   exports: [
     'IDocumentTypeRepository',
     'ITemplateRepository',
     'IGeneratedDocumentRepository',
-    DocumentGeneratorService,
+    GenerationOrchestrator,
+    ImmediateDispatcher,
+    // V2 exports (for future cross-module use)
+    StorageFactory,
+    DocxParser,
+    PdfConverterService,
   ],
 })
 export class DocumentModule {}

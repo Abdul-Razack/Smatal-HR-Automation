@@ -14,6 +14,23 @@ export class FieldRuntimeService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  public async validateFieldDefinitions(
+    companyId: string,
+    definitionIds: string[],
+  ): Promise<string[]> {
+    if (definitionIds.length === 0) return [];
+    const validFields = await this.prisma.fieldDefinition.findMany({
+      where: {
+        id: { in: definitionIds },
+        companyId,
+        isDeleted: false,
+      },
+      select: { id: true },
+    });
+    const validIds = new Set(validFields.map((f) => f.id));
+    return definitionIds.filter((id) => !validIds.has(id));
+  }
+
   public async resolveDocumentPlaceholders(
     companyId: string,
     profileId: string,
@@ -53,7 +70,7 @@ export class FieldRuntimeService {
       let resolvedValue = this.resolveDynamicValue(valueRecord);
 
       // Computed Field Strategy (future support)
-      if (!resolvedValue && def?.fieldType === 'COMPUTED') {
+      if (!resolvedValue && (def as any)?.fieldType === 'COMPUTED') {
         resolvedValue = this.resolveComputedField(def);
       }
 

@@ -88,3 +88,108 @@ export class CandidateDeletedEvent implements IDomainEvent {
     return new Identifier<string>(this.candidateId);
   }
 }
+
+// ─── Interview Scheduled ───────────────────────────────────────────────────────
+
+export class InterviewScheduledEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+
+  constructor(
+    public readonly interviewId: string,
+    public readonly candidateId: string,
+    public readonly companyId: string,
+    public readonly title: string,
+    public readonly scheduledAt: Date,
+    public readonly performedBy: string,
+  ) {}
+
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.interviewId);
+  }
+}
+
+// ─── Interview Cancelled ──────────────────────────────────────────────────────
+
+export class InterviewCancelledEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+
+  constructor(
+    public readonly interviewId: string,
+    public readonly candidateId: string,
+    public readonly companyId: string,
+    public readonly performedBy: string,
+  ) {}
+
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.interviewId);
+  }
+}
+
+// ─── Interview Completed ──────────────────────────────────────────────────────
+
+export class InterviewCompletedEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+
+  constructor(
+    public readonly interviewId: string,
+    public readonly candidateId: string,
+    public readonly companyId: string,
+    public readonly performedBy: string,
+  ) {}
+
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.interviewId);
+  }
+}
+
+// ─── Offer Generated ──────────────────────────────────────────────────────────
+
+export class OfferGeneratedEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+
+  constructor(
+    public readonly offerId: string,
+    public readonly candidateId: string,
+    public readonly companyId: string,
+    public readonly businessId: string,
+    public readonly performedBy: string,
+  ) {}
+
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.offerId);
+  }
+}
+
+// ─── Offer Accepted ───────────────────────────────────────────────────────────
+
+export class OfferAcceptedEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+
+  constructor(
+    public readonly offerId: string,
+    public readonly candidateId: string,
+    public readonly companyId: string,
+    public readonly performedBy: string,
+  ) {}
+
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.offerId);
+  }
+}
+
+// ─── Offer Rejected ───────────────────────────────────────────────────────────
+
+export class OfferRejectedEvent implements IDomainEvent {
+  public readonly dateTimeOccurred: Date = new Date();
+
+  constructor(
+    public readonly offerId: string,
+    public readonly candidateId: string,
+    public readonly companyId: string,
+    public readonly performedBy: string,
+  ) {}
+
+  getAggregateId(): Identifier<string> {
+    return new Identifier<string>(this.offerId);
+  }
+}

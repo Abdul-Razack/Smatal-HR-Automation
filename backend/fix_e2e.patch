@@ -1,0 +1,40 @@
+--- test/e2e/flows/1-authentication.e2e-spec.ts
++++ test/e2e/flows/1-authentication.e2e-spec.ts
+@@ -16,3 +16,3 @@
+     const company = await prisma.company.findFirst();
+-    companyId = company.id;
++    companyId = company?.id || '';
+   });
+--- test/e2e/flows/2-candidate-lifecycle.e2e-spec.ts
++++ test/e2e/flows/2-candidate-lifecycle.e2e-spec.ts
+@@ -20,3 +20,3 @@
+     const company = await prisma.company.findFirst();
+-    companyId = company.id;
++    companyId = company?.id || '';
+   });
+--- test/e2e/flows/3-employee-setup.e2e-spec.ts
++++ test/e2e/flows/3-employee-setup.e2e-spec.ts
+@@ -25,3 +25,3 @@
+     const company = await prisma.company.findFirst();
+-    companyId = company.id;
++    companyId = company?.id || '';
+   });
+--- test/e2e/flows/4-workflow-execution.e2e-spec.ts
++++ test/e2e/flows/4-workflow-execution.e2e-spec.ts
+@@ -23,3 +23,3 @@
+     const company = await prisma.company.findFirst();
+-    companyId = company.id;
++    companyId = company?.id || '';
+ 
+@@ -26,3 +26,3 @@
+     const wfDef = await prisma.workflowDefinition.findFirst({ include: { stages: true } });
+-    workflowDefinitionId = wfDef.id;
++    workflowDefinitionId = wfDef?.id || '';
+     const stages = wfDef?.stages || [];
+@@ -29,3 +29,3 @@
+     
+-    itStageId = stages.find((s: any) => s.code === 'IT')?.id;
+-    orientStageId = stages.find((s: any) => s.code === 'ORIENT')?.id;
++    itStageId = stages.find((s: any) => s.code === 'IT')?.id || '';
++    orientStageId = stages.find((s: any) => s.code === 'ORIENT')?.id || '';
+   });

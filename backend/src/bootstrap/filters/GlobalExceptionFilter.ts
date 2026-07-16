@@ -9,7 +9,7 @@ import { Request, Response } from 'express';
 import { ApiErrorResponse, ErrorCode } from '@smatal/shared';
 import { DomainException } from '../../kernel/domain/DomainException';
 import { AppLogger } from '../../observability/logging/logger.service';
-
+import { Prisma } from '@prisma/client';
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: AppLogger) {
@@ -45,6 +45,20 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       status = HttpStatus.BAD_REQUEST; // Map domain errors to 400 Bad Request
       message = exception.message;
       code = (exception.code as ErrorCode) || ErrorCode.DOMAIN_RULE_VIOLATION;
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      if (exception.code === 'P2002') {
+        status = HttpStatus.CONFLICT;
+        message = 'Resource already exists.';
+        code = ErrorCode.CONFLICT;
+      } else if (exception.code === 'P2025') {
+        status = HttpStatus.NOT_FOUND;
+        message = 'Resource not found.';
+        code = ErrorCode.NOT_FOUND;
+      } else {
+        status = HttpStatus.BAD_REQUEST;
+        message = 'Database operation failed.';
+        code = ErrorCode.VALIDATION_FAILED;
+      }
     }
 
     if (status === HttpStatus.INTERNAL_SERVER_ERROR) {

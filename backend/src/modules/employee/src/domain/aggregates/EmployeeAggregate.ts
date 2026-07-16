@@ -11,6 +11,8 @@ import {
   EmployeeStatusChangedEvent,
   EmployeeTerminatedEvent,
   EmployeeDeletedEvent,
+  EmployeePromotedEvent,
+  EmployeeTransferredEvent,
 } from '../events/EmployeeEvents';
 import { InvalidEmployeeStatusTransitionException } from '../exceptions/EmployeeExceptions';
 
@@ -34,8 +36,18 @@ export interface EmployeeProps extends TenantIsolatedEntityProps {
  * Maintains its own lifecycle independently of the Candidate.
  */
 export class EmployeeAggregate extends AggregateRoot<EmployeeProps> {
+  private _changeSets: Array<{ field: string; previous: string | null; new: string | null }> = [];
+
   private constructor(props: EmployeeProps, id: Identifier<string>) {
     super(props, id);
+  }
+
+  get changeSets() {
+    return this._changeSets;
+  }
+
+  clearChangeSets() {
+    this._changeSets = [];
   }
 
   // ─── Factory ─────────────────────────────────────────────────────────────
@@ -143,12 +155,33 @@ export class EmployeeAggregate extends AggregateRoot<EmployeeProps> {
   ): void {
     if (this.props.isDeleted)
       throw new Error('Cannot update a deleted employee');
-    if (departmentId !== undefined) this.props.departmentId = departmentId;
-    if (designationId !== undefined) this.props.designationId = designationId;
-    if (branchId !== undefined) this.props.branchId = branchId;
-    if (reportsToId !== undefined) this.props.reportsToId = reportsToId;
-    if (employeeNumber !== undefined)
-      this.props.employeeNumber = employeeNumber;
+
+    let isPromoted = false;
+    let isTransferred = false;
+
+    if (departmentId !== undefined && departmentId !== this.props.departmentId) {
+      this._changeSets.push({ field: 'DEPARTMENT_CHANGED', previous: this.props.departmentId ?? null, new: departmentId ?? null });
+      this.props.departmentId = departmentId;
+      isTransferred = true;
+    }
+    if (designationId !== undefined && designationId !== this.props.designationId) {
+      this._changeSets.push({ field: 'DESIGNATION_CHANGED', previous: this.props.designationId ?? null, new: designationId ?? null });
+      this.props.designationId = designationId;
+      isPromoted = true;
+    }
+    if (branchId !== undefined && branchId !== this.props.branchId) {
+      this._changeSets.push({ field: 'BRANCH_CHANGED', previous: this.props.branchId ?? null, new: branchId ?? null });
+      this.props.branchId = branchId;
+      isTransferred = true;
+    }
+    if (reportsToId !== undefined && reportsToId !== this.props.reportsToId) {
+      this._changeSets.push({ field: 'MANAGER_CHANGED', previous: this.props.reportsToId ?? null, new: reportsToId ?? null });
+      this.props.reportsToId = reportsToId;
+    }
+    if (employeeNumber !== undefined && employeeNumber !== this.props.employeeNumber) {
+      this.props.employeeNumber = employeeNumber; // no history for employee number usually, but can add if needed
+    }
+
     this.props.updatedBy = performedBy;
     this.props.updatedAt = new Date();
     this.props.version++;
@@ -160,6 +193,29 @@ export class EmployeeAggregate extends AggregateRoot<EmployeeProps> {
         performedBy,
       ),
     );
+
+    if (isPromoted && this.props.designationId) {
+      this.addDomainEvent(
+        new EmployeePromotedEvent(
+          this.id.toString(),
+          this.props.companyId.toString(),
+          this.props.designationId,
+          performedBy,
+        ),
+      );
+    }
+
+    if (isTransferred) {
+      this.addDomainEvent(
+        new EmployeeTransferredEvent(
+          this.id.toString(),
+          this.props.companyId.toString(),
+          this.props.departmentId ?? null,
+          this.props.branchId ?? null,
+          performedBy,
+        ),
+      );
+    }
   }
 
   private transitionStatus(
@@ -176,6 +232,9 @@ export class EmployeeAggregate extends AggregateRoot<EmployeeProps> {
     }
     const previous = this.props.status;
     this.props.status = newStatus;
+    
+    this._changeSets.push({ field: 'STATUS_CHANGED', previous: previous, new: newStatus });
+
     this.props.updatedBy = performedBy;
     this.props.updatedAt = new Date();
     this.props.version++;

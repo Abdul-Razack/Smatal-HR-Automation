@@ -1,4 +1,9 @@
-import { Injectable, OnApplicationBootstrap, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnApplicationBootstrap,
+  Logger,
+  Inject,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../infrastructure/database/prisma.service';
 
@@ -7,7 +12,7 @@ export class DiagnosticsService implements OnApplicationBootstrap {
   private readonly logger = new Logger(DiagnosticsService.name);
 
   constructor(
-    private readonly configService: ConfigService,
+    @Inject(ConfigService) private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {}
 

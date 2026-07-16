@@ -24,10 +24,14 @@ const prisma = new PrismaClient({
 // import { seedMasterFields } from './seeders/seedMasterFields';
 // import { seedAdminUser } from './seeders/seedAdminUser';
 // import { seedSystemTemplates } from './seeders/seedSystemTemplates';
+import { LeaveSeeder } from './seeders/LeaveSeeder';
+import { SeedContext } from './SeedContext';
 
 // -------------------------------------------------------
 // Main Seed Orchestrator
 // -------------------------------------------------------
+
+declare var process: any;
 
 async function main() {
   const environment = process.env.NODE_ENV || 'development';
@@ -35,9 +39,23 @@ async function main() {
   console.log(`[Smatal Seed] Environment: ${environment}\n`);
 
   try {
+    const envConfig = {
+      nodeEnv: environment,
+      isProduction: environment === 'production',
+      isDevelopment: environment === 'development',
+      isTesting: environment === 'test',
+      isDemo: environment === 'demo',
+      defaultAdminEmail: process.env.ADMIN_EMAIL || 'admin@smatal.com',
+      defaultAdminPassword: process.env.ADMIN_PASSWORD || 'Admin@123',
+      defaultAdminName: process.env.ADMIN_NAME || 'System Admin',
+      systemUuid: '00000000-0000-0000-0000-000000000000'
+    };
+
+    const seedContext = new SeedContext(prisma as any, envConfig);
     // Step 1: System Permissions
-    console.log('[Seed] 1/9 — Skipping: System Permissions (not yet implemented)');
-    // await seedSystemPermissions(prisma);
+    console.log('[Seed] 1/9 — Running: System Permissions');
+    const { PermissionSeeder } = await import('./seeders/PermissionSeeder');
+    await new PermissionSeeder().run(seedContext);
 
     // Step 2: System Roles (Super Admin, HR Admin, Recruiter, etc.)
     console.log('[Seed] 2/9 — Skipping: System Roles (not yet implemented)');
@@ -73,7 +91,11 @@ async function main() {
       // await seedAdminUser(prisma);
     }
 
-    console.log('\n[Smatal Seed] Seed framework run complete. No data inserted yet.\n');
+    console.log('[Seed] 10 — Running: Leave Seeder');
+    const leaveSeeder = new LeaveSeeder();
+    await leaveSeeder.run(seedContext);
+
+    console.log('\n[Smatal Seed] Seed framework run complete.\n');
   } catch (error) {
     console.error('[Smatal Seed] Error during seeding:', error);
     throw error;

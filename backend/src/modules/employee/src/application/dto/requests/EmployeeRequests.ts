@@ -1,6 +1,18 @@
 import { IsOptional, IsUUID, IsDateString, IsString } from 'class-validator';
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
+import { Type } from 'class-transformer';
+import { ValidateNested } from 'class-validator';
+
+export class DynamicFieldUpdateRequest {
+  @ApiProperty()
+  @IsUUID()
+  fieldDefinitionId: string;
+
+  @ApiProperty()
+  value: any;
+}
+
 export class UpdateEmployeeRequest {
   @ApiPropertyOptional()
   @IsOptional()
@@ -26,6 +38,12 @@ export class UpdateEmployeeRequest {
   @IsOptional()
   @IsString()
   employeeNumber?: string;
+
+  @ApiPropertyOptional({ type: [DynamicFieldUpdateRequest] })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => DynamicFieldUpdateRequest)
+  dynamicFields?: DynamicFieldUpdateRequest[];
 }
 
 export class TerminateEmployeeRequest {

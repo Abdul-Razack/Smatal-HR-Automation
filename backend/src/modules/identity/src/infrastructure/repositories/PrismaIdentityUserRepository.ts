@@ -30,10 +30,14 @@ export class PrismaIdentityUserRepository
 
   async findByEmail(
     email: string,
-    companyId: string,
+    companyId?: string,
   ): Promise<IdentityUserAggregate | null> {
+    const whereClause: any = { email, isDeleted: false };
+    if (companyId) {
+      whereClause.companyId = companyId;
+    }
     const record = await this.delegate.findFirst({
-      where: { email, companyId, isDeleted: false },
+      where: whereClause,
     });
     if (!record) return null;
     return this.mapper.toDomain(record);

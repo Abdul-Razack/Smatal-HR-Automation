@@ -14,6 +14,7 @@ export class WorkflowSeederService implements OnModuleInit {
   // For the sake of this phase, we'll expose a method to seed per company.
 
   constructor(
+    @Inject(CommandBus)
     private readonly commandBus: CommandBus,
     @Inject('IWorkflowDefinitionRepository')
     private readonly repo: IWorkflowDefinitionRepository,

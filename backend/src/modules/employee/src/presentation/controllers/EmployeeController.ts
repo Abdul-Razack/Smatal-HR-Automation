@@ -31,6 +31,7 @@ import { TerminateEmployeeCommand } from '../../application/commands/TerminateEm
 import { DeleteEmployeeCommand } from '../../application/commands/DeleteEmployee/DeleteEmployeeCommand';
 import { GetEmployeeQuery } from '../../application/queries/GetEmployee/GetEmployeeQuery';
 import { ListEmployeesQuery } from '../../application/queries/ListEmployees/ListEmployeesQuery';
+import { GetEmploymentHistoryQuery } from '../../application/queries/GetEmploymentHistory/GetEmploymentHistoryQuery';
 import { EmployeeStatus } from '../../domain/enums/EmployeeStatus';
 import { Result } from '../../../../../kernel/result/Result';
 
@@ -74,6 +75,12 @@ export class EmployeeController {
     return this.queryBus.execute(new GetEmployeeQuery(id, req.user.companyId));
   }
 
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Get employment history' })
+  async getHistory(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.queryBus.execute(new GetEmploymentHistoryQuery(id, req.user.companyId));
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update employee details' })
   async update(
@@ -91,6 +98,7 @@ export class EmployeeController {
         dto.branchId,
         dto.reportsToId,
         dto.employeeNumber,
+        dto.dynamicFields,
       ),
     );
     if (result.isFailure) return { error: result.errorValue };

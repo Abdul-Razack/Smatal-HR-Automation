@@ -9,5 +9,6 @@ export class UpdateEmployeeCommand implements ICommand {
     public readonly branchId?: string | null,
     public readonly reportsToId?: string | null,
     public readonly employeeNumber?: string | null,
+    public readonly dynamicFields?: { fieldDefinitionId: string; value: any }[],
   ) {}
 }

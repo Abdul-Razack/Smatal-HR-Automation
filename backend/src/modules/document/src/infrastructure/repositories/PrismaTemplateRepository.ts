@@ -39,6 +39,46 @@ export class PrismaTemplateRepository implements ITemplateRepository {
     return this.mapper.toDomain(record);
   }
 
+  async findManyPaginated(
+    params: any,
+  ): Promise<{ items: TemplateAggregate[]; total: number }> {
+    const where: any = { companyId: params.companyId, isDeleted: false };
+
+    if (params.documentTypeId) {
+      where.documentTypeId = params.documentTypeId;
+    }
+
+    if (params.status) {
+      where.status = params.status;
+    }
+
+    if (params.search) {
+      where.name = { contains: params.search, mode: 'insensitive' };
+    }
+
+    const [total, records] = await this.prisma.$transaction([
+      this.prisma.template.count({ where }),
+      this.prisma.template.findMany({
+        where,
+        skip: (params.page - 1) * params.pageSize,
+        take: params.pageSize,
+        orderBy: params.sort
+          ? { [params.sort]: params.order || 'asc' }
+          : { createdAt: 'desc' },
+        include: {
+          versions: {
+            include: { placeholders: true },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      total,
+      items: records.map((record) => this.mapper.toDomain(record)),
+    };
+  }
+
   async save(template: TemplateAggregate): Promise<void> {
     const data = this.mapper.toPersistence(template);
     const exists = await this.prisma.template.findUnique({

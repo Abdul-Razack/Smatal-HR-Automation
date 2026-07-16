@@ -16,7 +16,7 @@ export class PrismaUnitOfWork implements IUnitOfWork {
     return this.prisma.$transaction(
       async (tx: Prisma.TransactionClient) => {
         // Run the work callback within the AsyncLocalStorage context containing the tx client
-        return this.als.run(tx as ITransactionContext, async () => {
+        return this.als.run(tx, async () => {
           return await work();
         });
       },

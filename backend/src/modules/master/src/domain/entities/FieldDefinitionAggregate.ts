@@ -20,6 +20,8 @@ export enum FieldEntityType {
   PROFILE = 'PROFILE',
   CANDIDATE = 'CANDIDATE',
   EMPLOYEE = 'EMPLOYEE',
+  LEAVE_REQUEST = 'LEAVE_REQUEST',
+  LEAVE_POLICY = 'LEAVE_POLICY',
 }
 
 export interface FieldDefinitionProps extends BaseBusinessEntityProps {
