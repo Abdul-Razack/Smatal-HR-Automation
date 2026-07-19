@@ -790,7 +790,7 @@ model TemplateVersion {
 model TemplatePlaceholder {
   id                String   @id @default(uuid()) @db.Uuid
   templateVersionId String   @db.Uuid
-  fieldDefinitionId String   @db.Uuid
+  fieldDefinitionId String?  @db.Uuid
   placeholderKey    String   @db.VarChar(100)
   isRequired        Boolean  @default(true)
   displayOrder      Int      @default(0)
@@ -800,7 +800,7 @@ model TemplatePlaceholder {
   updatedBy         String   @db.Uuid
 
   templateVersion TemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
-  fieldDefinition FieldDefinition @relation(fields: [fieldDefinitionId], references: [id], onDelete: Restrict)
+  fieldDefinition FieldDefinition? @relation(fields: [fieldDefinitionId], references: [id], onDelete: Restrict)
 
   @@unique([templateVersionId, placeholderKey])
   @@index([templateVersionId])

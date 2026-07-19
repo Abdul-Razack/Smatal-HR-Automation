@@ -85,22 +85,46 @@ export class MasterDataSeeder extends BaseSeeder {
       });
 
       // 5. Dynamic Field
-      await tx.fieldDefinition.upsert({
-        where: { businessId: 'FLD-001' },
-        update: {},
-        create: {
-          businessId: 'FLD-001',
-          companyId: company.id,
-          machineKey: 'LINKEDIN_URL',
-          displayName: 'LinkedIn Profile URL',
-          entityType: FieldEntityType.CANDIDATE,
-          dataType: FieldDataType.TEXT,
-          isRequired: false,
-          isSystem: false,
-          createdBy: env.systemUuid,
-          updatedBy: env.systemUuid,
-        },
-      });
+      const fieldsToSeed = [
+        { key: 'LINKEDIN_URL', name: 'LinkedIn Profile URL', type: FieldDataType.TEXT, entity: FieldEntityType.CANDIDATE },
+        { key: 'JOB_TITLE', name: 'Job Title', type: FieldDataType.TEXT, entity: FieldEntityType.EMPLOYEE },
+        { key: 'EMPLOYMENT_TYPE', name: 'Employment Type', type: FieldDataType.TEXT, entity: FieldEntityType.EMPLOYEE },
+        { key: 'JOINING_DATE', name: 'Joining Date', type: FieldDataType.DATE, entity: FieldEntityType.EMPLOYEE },
+        { key: 'REPORTING_TIME', name: 'Reporting Time', type: FieldDataType.TEXT, entity: FieldEntityType.EMPLOYEE },
+        { key: 'ANNUAL_CTC', name: 'Annual CTC', type: FieldDataType.TEXT, entity: FieldEntityType.EMPLOYEE },
+        { key: 'OFFER_EXPIRATION', name: 'Offer Expiration Date', type: FieldDataType.DATE, entity: FieldEntityType.CANDIDATE },
+        { key: 'AUTH_SIGNATORY_NAME', name: 'Authorized Signatory Name', type: FieldDataType.TEXT, entity: FieldEntityType.PROFILE },
+        { key: 'AUTH_SIGNATORY_TITLE', name: 'Authorized Signatory Title', type: FieldDataType.TEXT, entity: FieldEntityType.PROFILE },
+        { key: 'OFFER_REF_NUM', name: 'Offer Reference Number', type: FieldDataType.TEXT, entity: FieldEntityType.CANDIDATE },
+        { key: 'CANDIDATE_ADDRESS_1', name: 'Candidate Address Line 1', type: FieldDataType.TEXT, entity: FieldEntityType.CANDIDATE },
+        { key: 'CANDIDATE_ADDRESS_2', name: 'Candidate Address Line 2', type: FieldDataType.TEXT, entity: FieldEntityType.CANDIDATE },
+      ];
+
+      for (let i = 0; i < fieldsToSeed.length; i++) {
+        const field = fieldsToSeed[i];
+        const businessId = `FLD-${String(i + 1).padStart(3, '0')}`;
+        await tx.fieldDefinition.upsert({
+          where: { businessId },
+          update: {
+            machineKey: field.key,
+            displayName: field.name,
+            entityType: field.entity,
+            dataType: field.type,
+          },
+          create: {
+            businessId,
+            companyId: company.id,
+            machineKey: field.key,
+            displayName: field.name,
+            entityType: field.entity,
+            dataType: field.type,
+            isRequired: false,
+            isSystem: false,
+            createdBy: env.systemUuid,
+            updatedBy: env.systemUuid,
+          },
+        });
+      }
     });
 
     console.log(`  -> Seeded Master Data (Branch, Dept, Designation, DocType, Field).`);
