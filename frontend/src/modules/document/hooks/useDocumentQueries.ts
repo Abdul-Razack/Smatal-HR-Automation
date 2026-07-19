@@ -87,6 +87,16 @@ export function useMapPlaceholders(templateId: string) {
   });
 }
 
+export function useDeleteTemplateVersion(templateId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (versionId: string) => DocumentApiService.deleteTemplateVersion(templateId, versionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentKeys.templateDetail(templateId) });
+    },
+  });
+}
+
 // --------------------------------------------------------
 // GENERATION QUERIES
 // --------------------------------------------------------
@@ -113,5 +123,12 @@ export function useGeneratedDocument(id: string) {
     queryKey: documentKeys.generatedDetail(id),
     queryFn: () => DocumentApiService.getGeneratedDocumentById(id),
     enabled: !!id,
+  });
+}
+
+export function useGlobalPlaceholders() {
+  return useQuery({
+    queryKey: ['globalPlaceholders'],
+    queryFn: () => DocumentApiService.getGlobalPlaceholders(),
   });
 }

@@ -19,15 +19,32 @@ export class FieldRuntimeService {
     definitionIds: string[],
   ): Promise<string[]> {
     if (definitionIds.length === 0) return [];
-    const validFields = await this.prisma.fieldDefinition.findMany({
-      where: {
-        id: { in: definitionIds },
-        companyId,
-        isDeleted: false,
-      },
-      select: { id: true },
-    });
-    const validIds = new Set(validFields.map((f) => f.id));
+    
+    // Separate system fields and custom fields
+    const systemFields = definitionIds.filter(id => !id.startsWith('custom.'));
+    const customFields = definitionIds.filter(id => id.startsWith('custom.'));
+    
+    // System fields are inherently valid
+    const validIds = new Set<string>(systemFields);
+    
+    if (customFields.length > 0) {
+      // Extract the machine keys (remove 'custom.')
+      const machineKeys = customFields.map(id => id.replace(/^custom\./, ''));
+      
+      const validDbFields = await this.prisma.fieldDefinition.findMany({
+        where: {
+          machineKey: { in: machineKeys },
+          companyId,
+          isDeleted: false,
+        },
+        select: { machineKey: true },
+      });
+      
+      validDbFields.forEach(f => {
+        validIds.add(`custom.${f.machineKey}`);
+      });
+    }
+
     return definitionIds.filter((id) => !validIds.has(id));
   }
 

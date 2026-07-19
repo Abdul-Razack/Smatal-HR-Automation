@@ -8,9 +8,10 @@ import { UnauthorizedPage } from '@/components/feedback/UnauthorizedPage';
 interface PermissionGuardProps {
   permissions: string[];
   children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
-export function PermissionGuard({ permissions, children }: PermissionGuardProps) {
+export function PermissionGuard({ permissions, children, fallback = <UnauthorizedPage /> }: PermissionGuardProps) {
   const userPermissions = usePermissions();
   
   const hasPermission = React.useMemo(() => {
@@ -22,7 +23,7 @@ export function PermissionGuard({ permissions, children }: PermissionGuardProps)
   }
 
   if (!hasPermission) {
-    return <UnauthorizedPage />;
+    return <>{fallback}</>;
   }
 
   return <>{children}</>;

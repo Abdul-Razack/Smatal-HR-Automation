@@ -5,13 +5,14 @@ import { TemplateVersionDto } from '@/modules/document/types';
 import { StatusChip } from '@/components/common/StatusChip';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
-import { FileDown, RefreshCcw, CheckCircle2 } from 'lucide-react';
+import { FileDown, RefreshCcw, CheckCircle2, Trash2 } from 'lucide-react';
 
 interface VersionTimelineProps {
   versions: TemplateVersionDto[];
   onPublish: (versionId: string) => void;
   onRollback: (versionId: string) => void;
   onDownload: (versionId: string) => void;
+  onDelete?: (versionId: string) => void;
   isLoading?: boolean;
 }
 
@@ -20,6 +21,7 @@ export function VersionTimeline({
   onPublish,
   onRollback,
   onDownload,
+  onDelete,
   isLoading
 }: VersionTimelineProps) {
   if (!versions || versions.length === 0) {
@@ -39,7 +41,11 @@ export function VersionTimeline({
           <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card border rounded-lg p-4 shadow-sm">
             <div className="flex items-center justify-between space-x-2 mb-1">
               <div className="font-bold">v{version.versionNumber}.0</div>
-              <time className="text-xs text-muted-foreground">{format(new Date(version.createdAt), 'PPpp')}</time>
+              <time className="text-xs text-muted-foreground">
+                {version.createdAt && !isNaN(new Date(version.createdAt).getTime()) 
+                  ? format(new Date(version.createdAt), 'PPpp') 
+                  : 'Date unavailable'}
+              </time>
             </div>
             <div className="mb-2">
               <StatusChip status={version.status} />
@@ -64,6 +70,11 @@ export function VersionTimeline({
               {version.status === 'PUBLISHED' && sortedVersions[0].id !== version.id && (
                 <Button size="sm" variant="secondary" onClick={() => onRollback(version.id)} disabled={isLoading}>
                   <RefreshCcw className="w-4 h-4 mr-1" /> Rollback Here
+                </Button>
+              )}
+              {version.status === 'DRAFT' && onDelete && (
+                <Button size="sm" variant="destructive" onClick={() => onDelete(version.id)} disabled={isLoading} aria-label="Delete draft version">
+                  <Trash2 className="w-4 h-4" />
                 </Button>
               )}
             </div>

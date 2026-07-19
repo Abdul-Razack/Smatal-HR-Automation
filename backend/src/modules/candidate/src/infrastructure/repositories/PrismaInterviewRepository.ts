@@ -15,7 +15,7 @@ export class PrismaInterviewRepository implements IInterviewRepository {
   }
 
   async findById(id: string): Promise<InterviewAggregate | null> {
-    const raw = await this.client.interviewSchedule.findUnique({
+    const raw = await (this.client as any).interviewSchedule.findUnique({
       where: { id, isDeleted: false },
       include: {
         feedback: true,
@@ -27,7 +27,7 @@ export class PrismaInterviewRepository implements IInterviewRepository {
   }
 
   async findByCandidateId(candidateId: string): Promise<InterviewAggregate[]> {
-    const raws = await this.client.interviewSchedule.findMany({
+    const raws = await (this.client as any).interviewSchedule.findMany({
       where: { candidateId, isDeleted: false },
       include: {
         feedback: true,
@@ -42,12 +42,12 @@ export class PrismaInterviewRepository implements IInterviewRepository {
     const data = InterviewMapper.toPersistence(interview);
 
     // Prisma's upsert for deep nested relations is tricky, so we use a transaction inside the main transaction
-    const existing = await this.client.interviewSchedule.findUnique({
+    const existing = await (this.client as any).interviewSchedule.findUnique({
       where: { id: data.id },
     });
 
     if (existing) {
-      await this.client.interviewSchedule.update({
+      await (this.client as any).interviewSchedule.update({
         where: { id: data.id },
         data: {
           title: data.title,
@@ -68,18 +68,18 @@ export class PrismaInterviewRepository implements IInterviewRepository {
       });
 
       // Update interviewers
-      await this.client.interviewInterviewer.deleteMany({
+      await (this.client as any).interviewInterviewer.deleteMany({
         where: { interviewScheduleId: data.id },
       });
       if (data.interviewers && data.interviewers.length > 0) {
-        await this.client.interviewInterviewer.createMany({
+        await (this.client as any).interviewInterviewer.createMany({
           data: data.interviewers,
         });
       }
 
       // Update feedback
       if (data.feedback) {
-        await this.client.interviewFeedback.upsert({
+        await (this.client as any).interviewFeedback.upsert({
           where: { interviewScheduleId: data.id },
           update: {
             rating: data.feedback.rating,
@@ -92,13 +92,13 @@ export class PrismaInterviewRepository implements IInterviewRepository {
           create: data.feedback,
         });
       } else {
-        await this.client.interviewFeedback.deleteMany({
+        await (this.client as any).interviewFeedback.deleteMany({
           where: { interviewScheduleId: data.id },
         });
       }
     } else {
       // Create new
-      await this.client.interviewSchedule.create({
+      await (this.client as any).interviewSchedule.create({
         data: {
           id: data.id,
           businessId: data.businessId,
@@ -130,7 +130,7 @@ export class PrismaInterviewRepository implements IInterviewRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.client.interviewSchedule.update({
+    await (this.client as any).interviewSchedule.update({
       where: { id },
       data: { isDeleted: true, deletedAt: new Date() },
     });

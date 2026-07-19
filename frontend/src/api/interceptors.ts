@@ -34,7 +34,27 @@ export const setupInterceptors = (apiClient: AxiosInstance) => {
       }
 
       if (companyId && config.headers) {
-        config.headers['X-Company-ID'] = companyId;
+        if (typeof companyId === 'string') {
+          config.headers['X-Company-ID'] = companyId;
+        } else if (typeof companyId === 'object' && companyId !== null && 'value' in companyId) {
+          config.headers['X-Company-ID'] = String((companyId as any).value);
+        } else {
+          config.headers['X-Company-ID'] = String(companyId);
+        }
+      }
+
+      let userId = useAuthStore.getState().currentUser?.id;
+      if (!userId && token) {
+        try {
+          const payloadBase64 = token.split('.')[1];
+          const decodedJson = atob(payloadBase64);
+          const payload = JSON.parse(decodedJson);
+          userId = payload.sub || payload.id;
+        } catch(e) {}
+      }
+
+      if (userId && config.headers) {
+        config.headers['X-User-ID'] = userId;
       }
 
       return config;
@@ -75,7 +95,13 @@ export const setupInterceptors = (apiClient: AxiosInstance) => {
       }
 
       // Pass through if not 401 or if it's already a retry
-      if (status !== 401 || !originalRequest || originalRequest._retry) {
+      // Also pass through if it's the login route itself failing with 401!
+      if (
+        status !== 401 || 
+        !originalRequest || 
+        originalRequest._retry || 
+        originalRequest.url?.includes('/auth/login')
+      ) {
         return Promise.reject(error);
       }
 

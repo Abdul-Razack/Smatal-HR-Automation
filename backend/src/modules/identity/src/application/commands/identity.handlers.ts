@@ -136,8 +136,8 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
       id: user.id.toString(),
       businessId: user.businessId,
       email: user.email,
-      profileId: user.profileId,
-      companyId: user.companyId,
+      profileId: user.profileId.toString(),
+      companyId: user.companyId.toString(),
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
       mfaEnabled: user.mfaEnabled,
@@ -189,8 +189,8 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
     const payload = {
       sub: user.id.toString(),
       email: user.email,
-      companyId: user.companyId,
-      profileId: user.profileId,
+      companyId: user.companyId.toString(),
+      profileId: user.profileId.toString(),
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -211,8 +211,8 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
         id: user.id.toString(),
         businessId: user.businessId,
         email: user.email,
-        profileId: user.profileId,
-        companyId: user.companyId,
+        profileId: user.profileId.toString(),
+        companyId: user.companyId.toString(),
         isActive: user.isActive,
         isEmailVerified: user.isEmailVerified,
         mfaEnabled: user.mfaEnabled,

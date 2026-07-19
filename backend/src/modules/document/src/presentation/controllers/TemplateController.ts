@@ -13,7 +13,11 @@ import {
   BadRequestException,
   UnauthorizedException,
   NotFoundException,
+  Res,
+  StreamableFile,
+  UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -25,38 +29,161 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 
+import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
+
 import { CreateTemplateCommand } from '../../application/commands/CreateTemplate/CreateTemplateCommand';
-import { CreateTemplateVersionCommand } from '../../application/commands/CreateTemplateVersion/CreateTemplateVersionCommand';
+
 import { PublishTemplateVersionCommand } from '../../application/commands/PublishTemplateVersion/PublishTemplateVersionCommand';
 import { GetTemplateQuery } from '../../application/queries/GetTemplate/GetTemplateQuery';
 import { GetAllTemplatesQuery } from '../../application/queries/GetAllTemplates/GetAllTemplatesQuery';
 
+import { DeleteTemplateVersionCommand } from '../../application/commands/DeleteTemplateVersion/DeleteTemplateVersionCommand';
 import { ImportTemplateVersionCommand } from '../../application/commands/ImportTemplateVersion/ImportTemplateVersionCommand';
 import { MapTemplatePlaceholdersCommand } from '../../application/commands/MapTemplatePlaceholders/MapTemplatePlaceholdersCommand';
 import { GetTemplatePlaceholdersQuery } from '../../application/queries/GetTemplatePlaceholders/GetTemplatePlaceholdersQuery';
+import { GetGlobalPlaceholdersQuery } from '../../application/queries/GetGlobalPlaceholders/GetGlobalPlaceholdersQuery';
+import { PreviewTemplateQuery } from '../../application/queries/PreviewTemplate/PreviewTemplateQuery';
+import { PreviewUploadedTemplateQuery } from '../../application/queries/PreviewUploadedTemplate/PreviewUploadedTemplateQuery';
 
 import { ApiResponse } from '../../../../../common/dto/ApiResponse';
 import { TemplateListQueryDto } from '../dtos/QueryDtos';
-import {
-  CreateTemplateRequestDto,
-  CreateTemplateVersionRequestDto,
-} from '../dtos/TemplateRequestDtos';
+import { CreateTemplateRequestDto } from '../dtos/TemplateRequestDtos';
 import { MapPlaceholdersRequestDto } from '../dtos/MappingRequestDtos';
 import {
   TemplateDto,
   TemplateVersionDto,
   PlaceholderDto,
 } from '../dtos/TemplateResponseDtos';
+import { GlobalPlaceholderResponseDto } from '../dtos/PlaceholderRegistryDtos';
+import { PreviewRequestDto, PreviewResponseDto } from '../dtos/PreviewResponseDto';
 import { PaginatedResult } from '../../../../../common/dto/PaginatedResult';
 
 @ApiTags('Templates')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('templates')
 export class TemplateController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
   ) {}
+
+  @Get('placeholders')
+  @ApiOperation({ summary: 'Get all global placeholders across entities' })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'entity', required: false, type: String })
+  @SwaggerResponse({
+    status: 200,
+    description: 'List of all system and dynamic placeholders',
+    type: [GlobalPlaceholderResponseDto],
+  })
+  async getGlobalPlaceholders(
+    @Headers('x-company-id') companyId: string,
+    @Query('search') search?: string,
+    @Query('entity') entity?: string,
+  ) {
+    const result = await this.queryBus.execute(
+      new GetGlobalPlaceholdersQuery(companyId, search, entity),
+    );
+    if (result.isFailure) throw new BadRequestException(result.error);
+    return ApiResponse.success<GlobalPlaceholderResponseDto[]>(
+      result.getValue(),
+    );
+  }
+
+  @Post(':id/preview')
+  @ApiOperation({ summary: 'Preview a saved template' })
+  @SwaggerResponse({
+    status: 200,
+    description: 'Preview response with Base64 content and metadata',
+    type: PreviewResponseDto,
+  })
+  async previewTemplate(
+    @Headers('x-company-id') companyId: string,
+    @Param('id') id: string,
+    @Body() body: PreviewRequestDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.queryBus.execute(
+      new PreviewTemplateQuery(
+        id,
+        companyId,
+        body.mode,
+        body.format,
+        body.candidateId,
+        body.employeeId,
+      ),
+    );
+    if (result.isFailure) throw new BadRequestException(result.error);
+    const dto = result.getValue() as PreviewResponseDto;
+
+    if (body.format === 'PDF' && dto.pdfBuffer) {
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="preview.pdf"',
+        'X-Validation-Errors': JSON.stringify(dto.errors),
+        'X-Validation-Warnings': JSON.stringify(dto.warnings),
+        'X-Resolved-Keys': JSON.stringify(dto.resolvedKeys),
+        'X-Unresolved-Keys': JSON.stringify(dto.unresolvedKeys),
+      });
+      return new StreamableFile(dto.pdfBuffer);
+    }
+    
+    // For HTML, return JSON as usual but strip the buffer to save memory
+    delete dto.pdfBuffer;
+    return ApiResponse.success<PreviewResponseDto>(dto);
+  }
+
+  @Post('preview')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Preview an uploaded template without saving' })
+  @SwaggerResponse({
+    status: 200,
+    description: 'Preview response with Base64 content and metadata',
+    type: PreviewResponseDto,
+  })
+  async previewUploadedTemplate(
+    @Headers('x-company-id') companyId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('mode') mode: 'SAMPLE' | 'LIVE',
+    @Body('format') format: 'HTML' | 'PDF',
+    @Res({ passthrough: true }) res: Response,
+    @Body('candidateId') candidateId?: string,
+    @Body('employeeId') employeeId?: string,
+    @Body('contentType') contentType?: 'html' | 'docx',
+  ) {
+    if (!file) throw new BadRequestException('File is required');
+    
+    const result = await this.queryBus.execute(
+      new PreviewUploadedTemplateQuery(
+        file.buffer,
+        companyId,
+        mode,
+        format,
+        candidateId,
+        employeeId,
+        contentType,
+      ),
+    );
+    if (result.isFailure) throw new BadRequestException(result.error);
+    const dto = result.getValue() as PreviewResponseDto;
+
+    if (format === 'PDF' && dto.pdfBuffer) {
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="preview.pdf"',
+        'X-Validation-Errors': JSON.stringify(dto.errors),
+        'X-Validation-Warnings': JSON.stringify(dto.warnings),
+        'X-Resolved-Keys': JSON.stringify(dto.resolvedKeys),
+        'X-Unresolved-Keys': JSON.stringify(dto.unresolvedKeys),
+      });
+      return new StreamableFile(dto.pdfBuffer);
+    }
+    
+    delete dto.pdfBuffer;
+    return ApiResponse.success<PreviewResponseDto>(dto);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get all templates with pagination and filtering' })
@@ -135,31 +262,7 @@ export class TemplateController {
     return ApiResponse.success<{ id: string }>({ id });
   }
 
-  @Post(':id/versions')
-  @ApiOperation({
-    summary: 'Create a new version for a template (HTML/Manual)',
-  })
-  @SwaggerResponse({ status: 201, description: 'Version created successfully' })
-  async createVersion(
-    @Param('id') templateId: string,
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
-    @Body() body: CreateTemplateVersionRequestDto,
-  ) {
-    const result = await this.commandBus.execute(
-      new CreateTemplateVersionCommand(
-        templateId,
-        companyId,
-        body.content,
-        body.contentType || 'html',
-        body.placeholders || [],
-        body.notes,
-        userId,
-      ),
-    );
-    if (result.isFailure) throw new BadRequestException(result.error);
-    return ApiResponse.success<{ id: string }>({ id: result.getValue() });
-  }
+
 
   @Post(':id/versions/:versionId/publish')
   @ApiOperation({ summary: 'Publish a specific template version' })
@@ -184,6 +287,30 @@ export class TemplateController {
     if (result.isFailure) throw new BadRequestException(result.error);
     return ApiResponse.success(null, {
       message: 'Version published successfully',
+    });
+  }
+
+  @Delete(':id/versions/:versionId')
+  @ApiOperation({ summary: 'Delete a template version' })
+  @SwaggerResponse({
+    status: 200,
+    description: 'Version deleted successfully',
+  })
+  async deleteVersion(
+    @Param('id') templateId: string,
+    @Param('versionId') versionId: string,
+    @Headers('x-company-id') companyId: string,
+  ) {
+    const result = await this.commandBus.execute(
+      new DeleteTemplateVersionCommand(
+        templateId,
+        versionId,
+        companyId,
+      ),
+    );
+    if (result.isFailure) throw new BadRequestException(result.error);
+    return ApiResponse.success(null, {
+      message: 'Version deleted successfully',
     });
   }
 

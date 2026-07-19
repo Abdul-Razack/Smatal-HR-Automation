@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 
 export function WorkflowInstanceList() {
-  const [statusFilter, setStatusFilter] = React.useState<string>('RUNNING');
+  const [statusFilter, setStatusFilter] = React.useState<string>('IN_PROGRESS');
   const { useWorkflowInstances } = useWorkflowInstance();
   const { data: instances = [], isLoading } = useWorkflowInstances({ status: statusFilter });
 
@@ -30,7 +30,7 @@ export function WorkflowInstanceList() {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => (
-        <Badge variant={row.original.status === 'RUNNING' ? 'default' : 'secondary'}>
+        <Badge variant={row.original.status === 'IN_PROGRESS' || row.original.status === 'PENDING' ? 'default' : 'secondary'}>
           {row.original.status}
         </Badge>
       )
@@ -66,7 +66,7 @@ export function WorkflowInstanceList() {
 
       <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
         <TabsList>
-          <TabsTrigger value="RUNNING">Active</TabsTrigger>
+          <TabsTrigger value="IN_PROGRESS">Active</TabsTrigger>
           <TabsTrigger value="COMPLETED">Completed</TabsTrigger>
           <TabsTrigger value="CANCELLED">Cancelled</TabsTrigger>
           <TabsTrigger value="FAILED">Failed</TabsTrigger>

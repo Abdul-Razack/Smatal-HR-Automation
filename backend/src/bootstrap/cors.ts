@@ -8,7 +8,7 @@ export function setupCors(app: INestApplication): void {
         : true, // Allow all in dev/test
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-correlation-id', 'x-company-id', 'x-user-id'],
     exposedHeaders: ['x-correlation-id'],
   });
 }

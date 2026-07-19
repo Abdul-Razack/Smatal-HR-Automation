@@ -14,6 +14,7 @@ import {
   TemplateVersionStatus,
   TemplateImportStatus,
 } from '../../../domain/enums/DocumentEnums';
+import { TemplatePlaceholderVO } from '../../../domain/value-objects/TemplatePlaceholderVO';
 import { TemplateImportedEvent } from '../../../domain/events/TemplateImportedEvent';
 
 import { DocxParser } from '../../../infrastructure/parsers/DocxParser';
@@ -87,12 +88,7 @@ export class ImportTemplateVersionHandler implements ICommandHandler<ImportTempl
       await this.docxParser.validate(command.fileBuffer);
       const scanResult = await this.docxParser.parse(command.fileBuffer);
 
-      // ── 6. Guard against duplicate placeholders ──────────────────────────
-      if (scanResult.placeholders.duplicates.length > 0) {
-        throw new DuplicatePlaceholderException(
-          scanResult.placeholders.duplicates,
-        );
-      }
+      // ── 6. (Removed) Allow duplicate placeholders in templates ───────────
 
       // ── 7. Load parent Template + authorise tenant ───────────────────────
       const template = await this.templateRepo.findById(command.templateId);
@@ -128,7 +124,14 @@ export class ImportTemplateVersionHandler implements ICommandHandler<ImportTempl
           content: '', // V2: No HTML content; file lives in storage
           contentType: 'docx', // Differentiates V2 from legacy V1 HTML versions
           status: TemplateVersionStatus.DRAFT,
-          placeholders: [], // Populated in MapTemplatePlaceholdersHandler
+          placeholders: scanResult.placeholders.detected.map((key, index) =>
+            TemplatePlaceholderVO.create({
+              id: randomUUID(),
+              placeholderKey: key,
+              isRequired: true,
+              displayOrder: index,
+            })
+          ),
           notes: command.notes,
           isDeleted: false,
           version: 1,
@@ -143,7 +146,7 @@ export class ImportTemplateVersionHandler implements ICommandHandler<ImportTempl
           fileSize: command.fileSize,
           checksum: uploadResult.checksum,
           placeholderCount: scanResult.placeholders.detected.length,
-          importStatus: TemplateImportStatus.MAPPING_REQUIRED,
+          importStatus: TemplateImportStatus.MAPPED,
         },
         new Identifier<string>(randomUUID()),
       );

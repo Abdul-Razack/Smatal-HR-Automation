@@ -1,6 +1,6 @@
 import { OfferAggregate } from '../../domain/aggregates/OfferAggregate';
 import { Identifier } from '../../../../../kernel/domain/Identifier';
-import { OfferLetter as PrismaOffer } from '@prisma/client';
+type PrismaOffer = any;
 import { OfferStatus } from '../../domain/enums/OfferStatus';
 import { Prisma } from '@prisma/client';
 

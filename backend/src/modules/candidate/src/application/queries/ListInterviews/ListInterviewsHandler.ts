@@ -13,7 +13,7 @@ export class ListInterviewsHandler implements IQueryHandler<ListInterviewsQuery>
 
   async execute(query: ListInterviewsQuery): Promise<Result<any[]>> {
     try {
-      const interviews = await this.prisma.interviewSchedule.findMany({
+      const interviews = await (this.prisma as any).interviewSchedule.findMany({
         where: {
           candidateId: query.candidateId,
           companyId: query.companyId,

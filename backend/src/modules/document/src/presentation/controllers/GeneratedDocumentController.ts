@@ -9,6 +9,7 @@ import {
   Delete,
   BadRequestException,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
@@ -17,6 +18,8 @@ import {
   ApiResponse as SwaggerResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
+
+import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
 
 import { GenerateDocumentCommand } from '../../application/commands/GenerateDocument/GenerateDocumentCommand';
 import { GetGeneratedDocumentQuery } from '../../application/queries/GetGeneratedDocument/GetGeneratedDocumentQuery';
@@ -30,6 +33,7 @@ import { PaginatedResult } from '../../../../../common/dto/PaginatedResult';
 
 @ApiTags('Generated Documents')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('generated-documents')
 export class GeneratedDocumentController {
   constructor(

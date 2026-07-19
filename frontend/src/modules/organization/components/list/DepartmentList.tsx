@@ -63,7 +63,7 @@ export function DepartmentList() {
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => openModal({
             id: 'import-department',
-            type: 'modal',
+            type: 'dialog',
             title: 'Import Departments',
             content: <div className="p-6 text-center text-muted-foreground">Import functionality coming soon.</div>,
           })}>

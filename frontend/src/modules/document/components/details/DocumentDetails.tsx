@@ -119,7 +119,7 @@ export function DocumentDetails({ documentId }: { documentId: string }) {
           </TabsContent>
           
           <TabsContent value="snapshot">
-            <SnapshotViewer snapshotData={doc.snapshot} />
+            <SnapshotViewer snapshotData={doc.snapshots?.[0]} />
           </TabsContent>
 
           <TabsContent value="history">

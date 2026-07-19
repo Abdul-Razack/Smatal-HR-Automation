@@ -7,6 +7,7 @@ import {
   Res,
   NotFoundException,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { QueryBus } from '@nestjs/cqrs';
@@ -18,6 +19,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 
+import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
+
 import { GetGeneratedDocumentQuery } from '../../application/queries/GetGeneratedDocument/GetGeneratedDocumentQuery';
 // Assume we have an IStorageService injection or a query to get download streams.
 // For the scope of finalizing the API contract, we will stub the actual streaming implementation,
@@ -25,6 +28,7 @@ import { GetGeneratedDocumentQuery } from '../../application/queries/GetGenerate
 
 @ApiTags('Document Downloads')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('documents')
 export class DocumentDownloadController {
   constructor(private readonly queryBus: QueryBus) {}

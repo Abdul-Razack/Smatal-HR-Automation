@@ -2,7 +2,7 @@ import { ValueObject } from '../../../../../kernel/domain/ValueObject';
 
 interface TemplatePlaceholderProps {
   id?: string;
-  fieldDefinitionId: string;
+  fieldDefinitionId?: string;
   placeholderKey: string;
   isRequired: boolean;
   displayOrder: number;
@@ -21,7 +21,7 @@ export class TemplatePlaceholderVO extends ValueObject<TemplatePlaceholderProps>
     return this.props.id;
   }
 
-  get fieldDefinitionId(): string {
+  get fieldDefinitionId(): string | undefined {
     return this.props.fieldDefinitionId;
   }
 

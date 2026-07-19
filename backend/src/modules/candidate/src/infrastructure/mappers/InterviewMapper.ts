@@ -1,10 +1,8 @@
 import { InterviewAggregate } from '../../domain/aggregates/InterviewAggregate';
 import { Identifier } from '../../../../../kernel/domain/Identifier';
-import {
-  InterviewSchedule as PrismaInterview,
-  InterviewFeedback as PrismaFeedback,
-  InterviewInterviewer as PrismaInterviewer,
-} from '@prisma/client';
+type PrismaInterview = any;
+type PrismaFeedback = any;
+type PrismaInterviewer = any;
 import { InterviewStatus } from '../../domain/enums/InterviewStatus';
 import { InterviewType } from '../../domain/enums/InterviewType';
 import { InterviewFeedbackEntity } from '../../domain/entities/InterviewFeedbackEntity';
@@ -36,7 +34,7 @@ export class InterviewMapper {
       );
     }
 
-    const interviewerIds = raw.interviewers ? raw.interviewers.map((i) => i.employeeId) : [];
+    const interviewerIds = raw.interviewers ? raw.interviewers.map((i: any) => i.employeeId) : [];
 
     return InterviewAggregate.reconstitute(
       {

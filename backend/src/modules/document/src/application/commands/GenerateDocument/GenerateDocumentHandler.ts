@@ -9,8 +9,9 @@ import { IBusinessIdGenerator } from '../../../../../../kernel/application/servi
 import { DocumentDomainService } from '../../../domain/services/DocumentDomainService';
 import { GeneratedDocumentAggregate } from '../../../domain/aggregates/GeneratedDocumentAggregate';
 import { DocumentGenerationStatus } from '../../../domain/enums/DocumentEnums';
-import { FieldRuntimeService } from '../../../../../master/src/runtime/FieldRuntimeService';
+import { AutomaticResolverService } from '../../../domain/services/AutomaticResolverService';
 import { ImmediateDispatcher } from '../../dispatchers/ImmediateDispatcher';
+import { PrismaEntityDataProvider } from '../../../infrastructure/data/PrismaEntityDataProvider';
 
 @CommandHandler(GenerateDocumentCommand)
 @Injectable()
@@ -26,8 +27,9 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
     @Inject('IBusinessIdGenerator')
     private readonly idGenerator: IBusinessIdGenerator,
     private readonly domainService: DocumentDomainService,
-    private readonly fieldRegistry: FieldRuntimeService,
+    private readonly automaticResolver: AutomaticResolverService,
     private readonly dispatcher: ImmediateDispatcher,
+    private readonly dataProvider: PrismaEntityDataProvider,
   ) {}
 
   async execute(command: GenerateDocumentCommand): Promise<Result<string>> {
@@ -50,21 +52,26 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
         );
       }
 
-      // Resolve placeholders to field values
-      const placeholders = activeVersion.placeholders.map((p) => ({
-        fieldDefinitionId: p.fieldDefinitionId,
-        placeholderKey: p.placeholderKey,
-        isRequired: p.isRequired,
-      }));
+      // Resolve placeholders automatically
+      const keys = activeVersion.placeholders.map((p) => p.placeholderKey);
 
-      const resolvedValues =
-        await this.fieldRegistry.resolveDocumentPlaceholders(
-          command.companyId,
-          command.profileId,
-          placeholders,
-          command.candidateId,
-          command.employeeId,
-        );
+      const result = await this.automaticResolver.resolvePlaceholders(
+        keys,
+        {
+          companyId: command.companyId,
+          profileId: command.profileId,
+          candidateId: command.candidateId,
+          employeeId: command.employeeId,
+          userId: command.performedBy,
+        },
+        this.dataProvider
+      );
+
+      if (result.errors.length > 0) {
+        throw new Error(`Cannot generate document: ${result.errors.join(', ')}`);
+      }
+
+      const resolvedValues = result.resolvedValues;
 
       // Create Document aggregate (GENERATING state)
       const businessId = await this.idGenerator.generate('GDOC');

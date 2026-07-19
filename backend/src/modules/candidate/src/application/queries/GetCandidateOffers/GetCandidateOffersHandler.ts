@@ -13,7 +13,7 @@ export class GetCandidateOffersHandler implements IQueryHandler<GetCandidateOffe
 
   async execute(query: GetCandidateOffersQuery): Promise<Result<any[]>> {
     try {
-      const offers = await this.prisma.offerLetter.findMany({
+      const offers = await (this.prisma as any).offerLetter.findMany({
         where: {
           candidateId: query.candidateId,
           companyId: query.companyId,

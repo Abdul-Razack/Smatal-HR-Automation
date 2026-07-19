@@ -9,7 +9,7 @@ import { GenerateDocumentFormData } from '../../schemas';
 import { useDocument } from '../../hooks/useDocument';
 import { DataTable } from '@/shared/tables/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
-import { GeneratedDocument } from '../../types';
+import { GeneratedDocumentDto } from '../../types';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
@@ -44,7 +44,7 @@ export function ProfileDocumentsTab({ entityType, entityId, profileId }: Profile
     });
   };
 
-  const columns: ColumnDef<GeneratedDocument>[] = [
+  const columns: ColumnDef<GeneratedDocumentDto>[] = [
     {
       accessorKey: 'businessId',
       header: 'Document ID',

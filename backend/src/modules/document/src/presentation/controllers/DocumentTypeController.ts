@@ -1,7 +1,12 @@
-import { Controller, Post, Body, Headers } from '@nestjs/common';
+import { Controller, Post, Body, Headers, UseGuards } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
 import { CreateDocumentTypeCommand } from '../../application/commands/CreateDocumentType/CreateDocumentTypeCommand';
 
+@ApiTags('Document Types')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('document-types')
 export class DocumentTypeController {
   constructor(

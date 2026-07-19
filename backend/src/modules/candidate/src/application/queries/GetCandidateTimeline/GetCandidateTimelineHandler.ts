@@ -22,11 +22,11 @@ export class GetCandidateTimelineHandler implements IQueryHandler<GetCandidateTi
 
       if (!candidate) throw new Error('Candidate not found');
 
-      const interviews = await this.prisma.interviewSchedule.findMany({
+      const interviews = await (this.prisma as any).interviewSchedule.findMany({
         where: { candidateId: query.candidateId, isDeleted: false },
       });
 
-      const offers = await this.prisma.offerLetter.findMany({
+      const offers = await (this.prisma as any).offerLetter.findMany({
         where: { candidateId: query.candidateId, isDeleted: false },
       });
 

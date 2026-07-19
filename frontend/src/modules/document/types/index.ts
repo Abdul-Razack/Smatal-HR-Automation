@@ -1,10 +1,10 @@
-export type TemplateStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type TemplateStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export type TemplateVersionStatus = 'DRAFT' | 'PUBLISHED' | 'DEPRECATED' | 'ARCHIVED' | 'ROLLED_BACK';
 export type TemplateImportStatus = 'PENDING' | 'SCANNING' | 'SCANNED' | 'MAPPING_REQUIRED' | 'MAPPED' | 'FAILED';
 
 export type DocumentGenerationStatus = 
   | 'PENDING' | 'DRAFT' | 'GENERATING' | 'GENERATED' 
-  | 'REVIEWED' | 'SENT' | 'ACCEPTED' | 'REJECTED' 
+  | 'REVIEWED' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'SIGNED' 
   | 'ARCHIVED' | 'VOIDED' | 'FAILED';
 
 export interface PlaceholderDto {
@@ -61,6 +61,9 @@ export interface GeneratedDocumentDto {
   profileId: string;
   documentTypeId: string;
   status: DocumentGenerationStatus;
+  templateId?: string;
+  templateVersionId?: string;
+  generatedBy?: string;
   workflowInstanceId?: string;
   workflowStageId?: string;
   candidateId?: string;

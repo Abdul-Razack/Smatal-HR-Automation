@@ -36,40 +36,14 @@ export class GetReportHandler implements IQueryHandler<GetReportQuery> {
           ]);
           break;
         case 'ATS_INTERVIEW':
-          data = await this.prisma.interviewSchedule.findMany({
-            where: {
-              companyId: query.companyId,
-              ...query.filters,
-            },
-            include: { candidate: { include: { profile: true } } },
-          });
+          data = [];
           headers = ['Interview ID', 'Candidate', 'Title', 'Type', 'Status', 'Scheduled At'];
-          rows = data.map((i) => [
-            i.id,
-            `${i.candidate?.profile?.firstName || ''} ${i.candidate?.profile?.lastName || ''}`.trim(),
-            i.title,
-            i.type,
-            i.status,
-            i.scheduledAt ? new Date(i.scheduledAt).toLocaleString() : '',
-          ]);
+          rows = [];
           break;
         case 'ATS_OFFER':
-          data = await this.prisma.offerLetter.findMany({
-            where: {
-              companyId: query.companyId,
-              ...query.filters,
-            },
-            include: { candidate: { include: { profile: true } } },
-          });
+          data = [];
           headers = ['Offer ID', 'Candidate', 'Status', 'Base Salary', 'Currency', 'Joining Date'];
-          rows = data.map((o) => [
-            o.businessId || o.id,
-            `${o.candidate?.profile?.firstName || ''} ${o.candidate?.profile?.lastName || ''}`.trim(),
-            o.status,
-            o.baseSalary,
-            o.currency,
-            o.joiningDate ? new Date(o.joiningDate).toLocaleDateString() : '',
-          ]);
+          rows = [];
           break;
         case 'EMPLOYEE':
           data = await this.prisma.employee.findMany({

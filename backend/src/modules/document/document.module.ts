@@ -25,7 +25,7 @@ import { StorageFactory } from '../../infrastructure/storage/StorageFactory';
 import { PdfConverterService } from './src/infrastructure/services/PdfConverterService';
 
 // V2: Generators
-import { HtmlGeneratorStrategy } from './src/infrastructure/generators/HtmlGeneratorStrategy';
+
 import { DocxGeneratorStrategy } from './src/infrastructure/generators/DocxGeneratorStrategy';
 import { DocumentGeneratorFactory } from './src/infrastructure/generators/DocumentGeneratorFactory';
 
@@ -36,13 +36,14 @@ import { DocxParser } from './src/infrastructure/parsers/DocxParser';
 // Command Handlers (V1 — unchanged)
 import { CreateDocumentTypeHandler } from './src/application/commands/CreateDocumentType/CreateDocumentTypeHandler';
 import { CreateTemplateHandler } from './src/application/commands/CreateTemplate/CreateTemplateHandler';
-import { CreateTemplateVersionHandler } from './src/application/commands/CreateTemplateVersion/CreateTemplateVersionHandler';
+
 import { PublishTemplateVersionHandler } from './src/application/commands/PublishTemplateVersion/PublishTemplateVersionHandler';
 import { GenerateDocumentHandler } from './src/application/commands/GenerateDocument/GenerateDocumentHandler';
 
 // Command Handlers (V2 — new)
 import { ImportTemplateVersionHandler } from './src/application/commands/ImportTemplateVersion/ImportTemplateVersionHandler';
 import { MapTemplatePlaceholdersHandler } from './src/application/commands/MapTemplatePlaceholders/MapTemplatePlaceholdersHandler';
+import { DeleteTemplateVersionCommandHandler } from './src/application/commands/DeleteTemplateVersion/DeleteTemplateVersionCommandHandler';
 
 // Query Handlers (V1 — unchanged)
 import { GetTemplateHandler } from './src/application/queries/GetTemplate/GetTemplateHandler';
@@ -55,6 +56,12 @@ import { DocumentWorker } from './src/application/workers/DocumentWorker';
 // Query Handlers (V2 — new)
 import { GetTemplatePlaceholdersHandler } from './src/application/queries/GetTemplatePlaceholders/GetTemplatePlaceholdersHandler';
 import { GetAllTemplatesHandler } from './src/application/queries/GetAllTemplates/GetAllTemplatesHandler';
+import { GetGlobalPlaceholdersHandler } from './src/application/queries/GetGlobalPlaceholders/GetGlobalPlaceholdersHandler';
+
+// Services (V2 — new)
+import { PlaceholderRegistryService } from './src/domain/services/PlaceholderRegistryService';
+import { AutomaticResolverService } from './src/domain/services/AutomaticResolverService';
+import { HtmlConverterService } from './src/infrastructure/services/HtmlConverterService';
 
 // Controllers
 import { DocumentTypeController } from './src/presentation/controllers/DocumentTypeController';
@@ -68,17 +75,22 @@ import { ImmediateDispatcher } from './src/application/dispatchers/ImmediateDisp
 import { TemplateLoader } from './src/infrastructure/services/TemplateLoader';
 import { GenerationValidator } from './src/domain/services/GenerationValidator';
 import { DocumentSnapshotBuilder } from './src/domain/builders/DocumentSnapshotBuilder';
+import { PrismaEntityDataProvider } from './src/infrastructure/data/PrismaEntityDataProvider';
+
+import { PreviewTemplateHandler } from './src/application/queries/PreviewTemplate/PreviewTemplateHandler';
+import { PreviewUploadedTemplateHandler } from './src/application/queries/PreviewUploadedTemplate/PreviewUploadedTemplateHandler';
 
 const CommandHandlers = [
   // V1
   CreateDocumentTypeHandler,
   CreateTemplateHandler,
-  CreateTemplateVersionHandler,
+
   PublishTemplateVersionHandler,
   GenerateDocumentHandler,
   // V2
   ImportTemplateVersionHandler,
   MapTemplatePlaceholdersHandler,
+  DeleteTemplateVersionCommandHandler,
 ];
 
 const QueryHandlers = [
@@ -89,6 +101,9 @@ const QueryHandlers = [
   // V2
   GetTemplatePlaceholdersHandler,
   GetAllTemplatesHandler,
+  GetGlobalPlaceholdersHandler,
+  PreviewTemplateHandler,
+  PreviewUploadedTemplateHandler,
 ];
 
 const Repositories = [
@@ -131,19 +146,19 @@ const Repositories = [
     S3StorageAdapter,
     StorageFactory,
     { provide: 'IStorageService', useClass: LocalStorageAdapter },
+    PlaceholderRegistryService,
+    AutomaticResolverService,
+    HtmlConverterService,
+    PrismaEntityDataProvider,
     // V2: Parsers
     PlaceholderScanner,
     DocxParser,
     // V2: Generators
-    HtmlGeneratorStrategy,
     DocxGeneratorStrategy,
     {
       provide: 'DOCUMENT_GENERATOR_STRATEGIES',
-      useFactory: (
-        html: HtmlGeneratorStrategy,
-        docx: DocxGeneratorStrategy,
-      ) => [html, docx],
-      inject: [HtmlGeneratorStrategy, DocxGeneratorStrategy],
+      useFactory: (docx: DocxGeneratorStrategy) => [docx],
+      inject: [DocxGeneratorStrategy],
     },
     DocumentGeneratorFactory,
     // V2: Orchestration (Phase 3)

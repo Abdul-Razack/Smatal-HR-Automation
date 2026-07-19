@@ -3,11 +3,15 @@
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function SnapshotViewer({ snapshotData }: { snapshotData: string }) {
+export function SnapshotViewer({ snapshotData }: { snapshotData: any }) {
   let parsedSnapshot = {};
   
   try {
-    parsedSnapshot = JSON.parse(snapshotData);
+    if (typeof snapshotData === 'string') {
+      parsedSnapshot = JSON.parse(snapshotData);
+    } else {
+      parsedSnapshot = snapshotData;
+    }
   } catch (e) {
     // If not JSON, treat as raw text/html
   }
@@ -19,14 +23,14 @@ export function SnapshotViewer({ snapshotData }: { snapshotData: string }) {
         <p className="text-sm text-muted-foreground">This data represents the exact state of the entity at the time of generation.</p>
       </CardHeader>
       <CardContent>
-        {typeof snapshotData === 'string' && snapshotData.startsWith('{') ? (
+        {typeof snapshotData === 'string' && snapshotData.startsWith('{') || typeof snapshotData === 'object' ? (
           <pre className="bg-muted p-4 rounded-md text-xs overflow-auto max-h-[500px]">
             {JSON.stringify(parsedSnapshot, null, 2)}
           </pre>
         ) : (
           <div 
             className="bg-white border rounded-md p-8 min-h-[500px] shadow-sm overflow-auto text-black prose" 
-            dangerouslySetInnerHTML={{ __html: snapshotData || 'No snapshot available' }} 
+            dangerouslySetInnerHTML={{ __html: typeof snapshotData === 'string' ? snapshotData : 'No snapshot available' }} 
           />
         )}
       </CardContent>

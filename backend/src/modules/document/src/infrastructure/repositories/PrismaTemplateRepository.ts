@@ -107,7 +107,7 @@ export class PrismaTemplateRepository implements ITemplateRepository {
               data: placeholders.map((p: any) => ({
                 id: p.id,
                 templateVersionId: vId,
-                fieldDefinitionId: p.fieldDefinitionId,
+                fieldDefinitionId: p.fieldDefinitionId || null,
                 placeholderKey: p.placeholderKey,
                 isRequired: p.isRequired,
                 displayOrder: p.displayOrder,
@@ -124,7 +124,7 @@ export class PrismaTemplateRepository implements ITemplateRepository {
               placeholders: {
                 create: (placeholders || []).map((p: any) => ({
                   id: p.id,
-                  fieldDefinitionId: p.fieldDefinitionId,
+                  fieldDefinitionId: p.fieldDefinitionId || null,
                   placeholderKey: p.placeholderKey,
                   isRequired: p.isRequired,
                   displayOrder: p.displayOrder,
@@ -149,7 +149,7 @@ export class PrismaTemplateRepository implements ITemplateRepository {
                 placeholders: {
                   create: (placeholders || []).map((p: any) => ({
                     id: p.id,
-                    fieldDefinitionId: p.fieldDefinitionId,
+                    fieldDefinitionId: p.fieldDefinitionId || null,
                     placeholderKey: p.placeholderKey,
                     isRequired: p.isRequired,
                     displayOrder: p.displayOrder,

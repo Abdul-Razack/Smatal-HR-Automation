@@ -15,7 +15,7 @@ export class PrismaOfferRepository implements IOfferRepository {
   }
 
   async findById(id: string): Promise<OfferAggregate | null> {
-    const raw = await this.client.offerLetter.findUnique({
+    const raw = await (this.client as any).offerLetter.findUnique({
       where: { id, isDeleted: false },
     });
     if (!raw) return null;
@@ -23,7 +23,7 @@ export class PrismaOfferRepository implements IOfferRepository {
   }
 
   async findByCandidateId(candidateId: string): Promise<OfferAggregate[]> {
-    const raws = await this.client.offerLetter.findMany({
+    const raws = await (this.client as any).offerLetter.findMany({
       where: { candidateId, isDeleted: false },
       orderBy: { createdAt: 'desc' },
     });
@@ -33,24 +33,24 @@ export class PrismaOfferRepository implements IOfferRepository {
   async save(offer: OfferAggregate): Promise<void> {
     const data = OfferMapper.toPersistence(offer);
 
-    const existing = await this.client.offerLetter.findUnique({
+    const existing = await (this.client as any).offerLetter.findUnique({
       where: { id: data.id },
     });
 
     if (existing) {
-      await this.client.offerLetter.update({
+      await (this.client as any).offerLetter.update({
         where: { id: data.id },
         data,
       });
     } else {
-      await this.client.offerLetter.create({
+      await (this.client as any).offerLetter.create({
         data,
       });
     }
   }
 
   async delete(id: string): Promise<void> {
-    await this.client.offerLetter.update({
+    await (this.client as any).offerLetter.update({
       where: { id },
       data: { isDeleted: true, deletedAt: new Date() },
     });

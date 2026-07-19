@@ -121,23 +121,23 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
     });
 
     // We can join with offer to get offer counts
-    const offersPending = await this.prisma.offerLetter.count({
-      where: { companyId, status: 'GENERATED' },
-    });
+    const offersPending = 0; // await this.prisma.offerLetter.count({
+      // where: { companyId, status: 'PENDING' },
+    // });
     
-    const offersAccepted = await this.prisma.offerLetter.count({
-      where: { companyId, status: 'ACCEPTED' },
-    });
+    const offersAccepted = 0; // await this.prisma.offerLetter.count({
+      // where: { companyId, status: 'ACCEPTED' },
+    // });
 
-    const interviewsToday = await this.prisma.interviewSchedule.count({
-      where: {
-        companyId,
-        scheduledAt: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          lt: new Date(new Date().setHours(23, 59, 59, 999)),
-        },
-      },
-    });
+    const interviewsToday = 0; // await this.prisma.interviewSchedule.count({
+      // where: {
+        // companyId,
+        // scheduledDate: {
+          // gte: startOfDay,
+          // lte: endOfDay,
+        // },
+      // },
+    // });
 
     const recentCandidates = await this.prisma.candidate.findMany({
       where: { companyId, isDeleted: false },

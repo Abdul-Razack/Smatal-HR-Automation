@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client';
-import { GeneratedDocument, DocumentTemplate } from '../types';
+import { GeneratedDocumentDto, TemplateDto } from '../types';
 
 export const documentApi = {
   // Generated Documents
@@ -15,7 +15,7 @@ export const documentApi = {
     return response.data;
   },
 
-  getGeneratedDocument: async (id: string): Promise<GeneratedDocument> => {
+  getGeneratedDocument: async (id: string): Promise<GeneratedDocumentDto> => {
     const response = await apiClient.get(`/generated-documents/${id}`);
     return response.data;
   },
@@ -24,7 +24,7 @@ export const documentApi = {
     profileId?: string;
     candidateId?: string;
     employeeId?: string;
-  }): Promise<GeneratedDocument[]> => {
+  }): Promise<GeneratedDocumentDto[]> => {
     const params = new URLSearchParams();
     if (filters?.profileId) params.append('profileId', filters.profileId);
     if (filters?.candidateId) params.append('candidateId', filters.candidateId);
@@ -50,7 +50,7 @@ export const documentApi = {
     return response.data;
   },
 
-  getTemplate: async (id: string): Promise<DocumentTemplate> => {
+  getTemplate: async (id: string): Promise<TemplateDto> => {
     const response = await apiClient.get(`/templates/${id}`);
     return response.data;
   },

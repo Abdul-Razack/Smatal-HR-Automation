@@ -104,7 +104,7 @@ export class TemplateAggregate extends AggregateRoot<TemplateProps> {
       activeVersion.deprecate(performedBy);
     }
     versionToPublish.publish(performedBy);
-    this.props.status = TemplateStatus.ACTIVE;
+    this.props.status = TemplateStatus.PUBLISHED;
   }
 
   public getActiveVersion(): TemplateVersionEntity | undefined {

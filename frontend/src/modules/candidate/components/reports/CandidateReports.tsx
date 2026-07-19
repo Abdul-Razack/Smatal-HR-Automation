@@ -5,7 +5,7 @@ import { useAnalytics } from '@/modules/analytics/hooks/useAnalytics';
 import { CandidateReportFilters } from './CandidateReportFilters';
 import { CandidateCharts } from './CandidateCharts';
 import { CandidateReportsTable } from './CandidateReportsTable';
-import { useExport } from '@/modules/export/hooks/useExport';
+// Export module removed for MVP
 
 export function CandidateReports() {
   const [reportType, setReportType] = useState('ATS_PIPELINE');

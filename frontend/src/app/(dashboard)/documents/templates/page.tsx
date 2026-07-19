@@ -61,7 +61,7 @@ export default function TemplatesPage() {
             Manage reusable templates for generating DOCX and PDF documents.
           </p>
         </div>
-        <PermissionGuard permissions={['DocumentTemplate.Create']}>
+        <PermissionGuard permissions={['DocumentTemplate.Create']} fallback={null}>
           <Link href="/documents/templates/create">
             <Button>
               <Plus className="mr-2 h-4 w-4" /> Create Template

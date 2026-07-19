@@ -13,7 +13,7 @@ export class GetInterviewHandler implements IQueryHandler<GetInterviewQuery> {
 
   async execute(query: GetInterviewQuery): Promise<Result<any>> {
     try {
-      const interview = await this.prisma.interviewSchedule.findUnique({
+      const interview = await (this.prisma as any).interviewSchedule.findUnique({
         where: {
           id: query.interviewId,
           companyId: query.companyId,

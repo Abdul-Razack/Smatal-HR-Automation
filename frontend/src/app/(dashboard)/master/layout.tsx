@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Building2, FileText, Settings, Briefcase, FormInput } from 'lucide-react';
+import { Building2, Briefcase, FormInput } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
 const masterRoutes = [
@@ -30,13 +30,6 @@ const masterRoutes = [
     children: [
       { title: 'Field Registry', href: '/master/fields/registry' },
       { title: 'Document Types', href: '/master/fields/documents' },
-    ],
-  },
-  {
-    title: 'Templates',
-    icon: FileText,
-    children: [
-      { title: 'Template Manager', href: '/master/templates' },
     ],
   },
 ];

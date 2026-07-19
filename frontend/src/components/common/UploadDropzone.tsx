@@ -60,7 +60,7 @@ export function UploadDropzone({
         className
       )}
     >
-      <input {...getInputProps()} />
+      <input {...getInputProps({ 'aria-label': 'Choose Files' })} />
       
       {selectedFile ? (
         <div className="flex flex-col items-center space-y-4">
@@ -79,6 +79,7 @@ export function UploadDropzone({
               size="icon"
               className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
               onClick={clearFile}
+              aria-label="Clear selected file"
             >
               <X className="h-4 w-4" />
             </Button>

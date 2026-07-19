@@ -59,7 +59,7 @@ export class GetTemplatePlaceholdersHandler implements IQueryHandler<GetTemplate
       const placeholders: PlaceholderDTO[] = version.placeholders.map((p) => ({
         id: p.id,
         placeholderKey: p.placeholderKey,
-        fieldDefinitionId: p.fieldDefinitionId,
+        fieldDefinitionId: p.fieldDefinitionId || '',
         isRequired: p.isRequired,
         displayOrder: p.displayOrder,
       }));

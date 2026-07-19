@@ -1,6 +1,6 @@
 import { WorkflowStage } from './index';
 
-export type WorkflowInstanceStatus = 'RUNNING' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
+export type WorkflowInstanceStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
 
 export interface WorkflowInstance {
   id: string;

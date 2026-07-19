@@ -5,7 +5,7 @@ import { Download, FileText, Printer, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useGeneratedDocument, useDocumentPreview } from '@/modules/document/hooks/useDocumentQueries';
+// Removed unused imports
 
 // Export an additional hook to fetch the preview URL
 // In useDocumentQueries.ts:

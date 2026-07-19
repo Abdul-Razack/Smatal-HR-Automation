@@ -51,11 +51,17 @@ export class DocumentApiService {
   static async uploadTemplateVersion(templateId: string, file: File, notes?: string): Promise<void> {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('templateId', templateId);
     if (notes) formData.append('notes', notes);
 
-    await apiClient.post(`/templates/${templateId}/versions/upload`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+    await apiClient.post(`/templates/import`, formData, {
+      headers: { 'Content-Type': undefined }
     });
+  }
+
+  static async getGlobalPlaceholders(): Promise<any[]> {
+    const response = await apiClient.get<ApiResponse<any[]>>(`/templates/placeholders`);
+    return response.data.data;
   }
 
   static async publishVersion(templateId: string, versionId: string): Promise<void> {
@@ -68,6 +74,10 @@ export class DocumentApiService {
 
   static async mapPlaceholders(templateId: string, versionId: string, mappings: Array<{ placeholderKey: string, fieldDefinitionId: string }>): Promise<void> {
     await apiClient.post(`/templates/${templateId}/versions/${versionId}/map-placeholders`, { mappings });
+  }
+
+  static async deleteTemplateVersion(templateId: string, versionId: string): Promise<void> {
+    await apiClient.delete(`/templates/${templateId}/versions/${versionId}`);
   }
 
   // --------------------------------------------------------

@@ -86,6 +86,15 @@ export const navigationConfig: NavigationItem[] = [
     order: 60,
   },
   {
+    id: 'document-templates',
+    title: 'Doc Templates',
+    route: '/documents/templates',
+    icon: FileText,
+    permission: 'document:view',
+    module: 'document',
+    order: 65,
+  },
+  {
     id: 'analytics',
     title: 'Analytics',
     route: '/hr/reports',

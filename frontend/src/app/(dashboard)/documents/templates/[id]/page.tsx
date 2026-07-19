@@ -19,17 +19,10 @@ import {
   useUploadTemplateVersion,
   usePublishVersion,
   useDeleteTemplate,
+  useDeleteTemplateVersion,
   useMapPlaceholders,
+  useGlobalPlaceholders,
 } from '@/modules/document/hooks/useDocumentQueries';
-
-// Mock field definitions for mapping (since this belongs to a different module in reality)
-const MOCK_FIELD_DEFINITIONS = [
-  { id: 'fd-1', name: 'Candidate First Name', type: 'STRING' },
-  { id: 'fd-2', name: 'Candidate Last Name', type: 'STRING' },
-  { id: 'fd-3', name: 'Offer Salary', type: 'CURRENCY' },
-  { id: 'fd-4', name: 'Start Date', type: 'DATE' },
-  { id: 'fd-5', name: 'Company Name', type: 'STRING' },
-];
 
 export default function TemplateDetailsPage() {
   const router = useRouter();
@@ -37,9 +30,11 @@ export default function TemplateDetailsPage() {
   const templateId = params.id as string;
 
   const { data: template, isLoading, isError } = useTemplate(templateId);
+  const { data: globalPlaceholders = [] } = useGlobalPlaceholders();
   
   const uploadVersion = useUploadTemplateVersion(templateId);
   const publishVersion = usePublishVersion(templateId);
+  const deleteVersion = useDeleteTemplateVersion(templateId);
   const deleteTemplate = useDeleteTemplate();
   const mapPlaceholders = useMapPlaceholders(templateId);
 
@@ -97,6 +92,15 @@ export default function TemplateDetailsPage() {
     }
   };
 
+  const handleVersionDelete = async (versionId: string) => {
+    try {
+      await deleteVersion.mutateAsync(versionId);
+      toast.success('Version deleted.');
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Failed to delete version.');
+    }
+  };
+
   // Find the latest draft version that might require mapping
   const latestDraft = template.versions?.find(v => v.status === 'DRAFT' || v.importStatus === 'MAPPING_REQUIRED');
 
@@ -104,7 +108,7 @@ export default function TemplateDetailsPage() {
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/documents/templates')}>
+          <Button variant="ghost" size="icon" onClick={() => router.push('/documents/templates')} aria-label="Back to templates">
             <ChevronLeft className="h-5 w-5" />
           </Button>
           <div>
@@ -151,7 +155,11 @@ export default function TemplateDetailsPage() {
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-1">Created At</h4>
-                <p className="text-sm">{new Date(template.createdAt).toLocaleString()}</p>
+                <p className="text-sm">
+                  {template.createdAt && !isNaN(new Date(template.createdAt).getTime())
+                    ? new Date(template.createdAt).toLocaleString()
+                    : 'Date unavailable'}
+                </p>
               </div>
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-1">Total Versions</h4>
@@ -163,9 +171,14 @@ export default function TemplateDetailsPage() {
 
         <TabsContent value="versions" className="pt-6 space-y-8">
           <div className="bg-muted/30 p-6 rounded-lg border border-dashed">
-            <h3 className="text-lg font-semibold mb-4 flex items-center">
-              <FilePlus2 className="w-5 h-5 mr-2 text-primary" />
-              Upload New Version
+            <h3 className="text-lg font-semibold mb-4 flex items-center justify-between">
+              <span className="flex items-center">
+                <FilePlus2 className="w-5 h-5 mr-2 text-primary" />
+                Upload New Version
+              </span>
+              <Button variant="outline" size="sm" onClick={() => router.push(`/documents/templates/${templateId}/edit`)}>
+                <FileEdit className="mr-2 h-4 w-4" /> Open Browser Editor
+              </Button>
             </h3>
             <UploadDropzone
               onDrop={handleUpload}
@@ -181,7 +194,8 @@ export default function TemplateDetailsPage() {
               onPublish={handlePublish}
               onRollback={(v) => console.log('rollback', v)}
               onDownload={(v) => console.log('download', v)}
-              isLoading={publishVersion.isPending}
+              onDelete={handleVersionDelete}
+              isLoading={publishVersion.isPending || deleteVersion.isPending}
             />
           </div>
         </TabsContent>
@@ -196,7 +210,11 @@ export default function TemplateDetailsPage() {
             </div>
             <PlaceholderMappingTable 
               placeholders={latestDraft.placeholders}
-              fieldDefinitions={MOCK_FIELD_DEFINITIONS}
+              fieldDefinitions={globalPlaceholders.map((p: any) => ({
+                id: p.key,
+                name: p.label,
+                type: p.dataType
+              }))}
               onSaveMappings={(mappings) => handleSaveMappings(latestDraft.id, mappings)}
               isLoading={mapPlaceholders.isPending}
             />

@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useDocument } from '../../hooks/useDocument';
 import { DataTable } from '@/shared/tables/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
-import { GeneratedDocument } from '../../types';
+import { GeneratedDocumentDto } from '../../types';
 import { Button } from '@/components/ui/button';
 import { Eye, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ export function DocumentList() {
   const { useGeneratedDocuments } = useDocument();
   const { data: documents = [], isLoading } = useGeneratedDocuments();
 
-  const columns: ColumnDef<GeneratedDocument>[] = [
+  const columns: ColumnDef<GeneratedDocumentDto>[] = [
     {
       accessorKey: 'businessId',
       header: 'Document ID',

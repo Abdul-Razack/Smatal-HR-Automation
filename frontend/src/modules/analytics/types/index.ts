@@ -17,6 +17,10 @@ export interface DashboardMetrics {
   pendingApprovals?: number;
   recentActivities?: any[];
   recentHires?: RecentHire[];
+  interviewsToday?: number;
+  offersPending?: number;
+  offersAccepted?: number;
+  recentCandidates?: any[];
 }
 
 export interface SearchResult {

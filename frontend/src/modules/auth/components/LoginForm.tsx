@@ -28,12 +28,14 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
   });
 
   const onSubmit = (data: LoginFormData) => {
+    console.log('--- LOGIN SUBMIT CLICKED ---');
+    console.log('Form data:', data);
     login(data);
   };
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(onSubmit, (errs) => console.log('VALIDATION ERRORS:', errs))}>
         <div className="grid gap-4">
           <div className="grid gap-1">
             <label className="text-sm font-medium leading-none" htmlFor="email">
@@ -103,6 +105,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
           <button
             type="submit"
             disabled={isLoggingIn}
+            onClick={() => console.log('BUTTON CLICKED NATIVELY')}
             className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
           >
             {isLoggingIn && (

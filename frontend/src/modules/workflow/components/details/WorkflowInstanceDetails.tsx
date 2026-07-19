@@ -57,11 +57,11 @@ export function WorkflowInstanceDetails({ instanceId }: { instanceId: string }) 
         </div>
         
         <div className="flex items-center gap-2">
-          <Badge variant={instance.status === 'RUNNING' ? 'default' : 'secondary'} className="text-sm px-3 py-1">
+          <Badge variant={instance.status === 'IN_PROGRESS' || instance.status === 'PENDING' ? 'default' : 'secondary'} className="text-sm px-3 py-1">
             {instance.status}
           </Badge>
 
-          {instance.status === 'RUNNING' && (
+          {(instance.status === 'IN_PROGRESS' || instance.status === 'PENDING') && (
             <>
               <Button onClick={() => handleAction('approve')} variant="default" size="sm">
                 <CheckCircle className="mr-2 h-4 w-4" /> Approve

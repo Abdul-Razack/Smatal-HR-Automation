@@ -3,8 +3,9 @@ import { storage } from '@/utils/storage';
 
 export interface User {
   id: string;
-  name: string;
+  name?: string;
   email: string;
+  companyId?: string;
 }
 
 export interface Company {
@@ -44,7 +45,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: (data) => {
     storage.set('access_token', data.accessToken);
     storage.set('refresh_token', data.refreshToken);
-    if (data.company) storage.set('company_id', data.company.id);
+    if (data.company) {
+      storage.set('company_id', data.company.id);
+    } else if (data.user && data.user.companyId) {
+      storage.set('company_id', data.user.companyId);
+    }
 
     set({
       accessToken: data.accessToken,

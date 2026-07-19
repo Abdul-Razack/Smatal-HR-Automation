@@ -4,6 +4,7 @@ import { GetTemplateQuery } from './GetTemplateQuery';
 import { Result } from '../../../../../../kernel/result/Result';
 import { ITemplateRepository } from '../../../domain/repositories/ITemplateRepository';
 import { TemplateMapper } from '../../../infrastructure/mappers/TemplateMapper';
+import { TemplateDtoMapper } from '../../../presentation/mappers/TemplateDtoMapper';
 
 @QueryHandler(GetTemplateQuery)
 @Injectable()
@@ -21,7 +22,7 @@ export class GetTemplateHandler implements IQueryHandler<GetTemplateQuery> {
         return Result.fail(`Template not found: ${query.templateId}`);
       }
 
-      return Result.ok(this.mapper.toDTO(template));
+      return Result.ok(TemplateDtoMapper.toDetailDto(template));
     } catch (error: any) {
       return Result.fail(error.message);
     }

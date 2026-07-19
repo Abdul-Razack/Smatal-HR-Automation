@@ -1,6 +1,6 @@
 export enum TemplateStatus {
   DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE',
+  PUBLISHED = 'PUBLISHED',
   ARCHIVED = 'ARCHIVED',
 }
 
