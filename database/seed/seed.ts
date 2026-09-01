@@ -53,8 +53,8 @@ async function main() {
     new AdminUserSeeder(),
     new MasterDataSeeder(),
     new WorkflowSeeder(),
-    new DocumentSeeder(),
-    new DemoDataSeeder(),
+    // new DocumentSeeder(), // Disabled per user request
+    // new DemoDataSeeder(), // Disabled per user request
     new LeaveSeeder(),
   ]);
 

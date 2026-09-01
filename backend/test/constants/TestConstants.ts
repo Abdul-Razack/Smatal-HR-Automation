@@ -21,7 +21,7 @@ export const TestConstants = {
   },
   SEED_DATA: {
     SUPER_ADMIN_EMAIL: 'admin@smatal.com',
-    DEFAULT_PASSWORD: 'Admin@123!',
+    DEFAULT_PASSWORD: 'password',
     TENANT_CODE: 'CMP-001',
     SYSTEM_UUID: '00000000-0000-0000-0000-000000000000',
   },

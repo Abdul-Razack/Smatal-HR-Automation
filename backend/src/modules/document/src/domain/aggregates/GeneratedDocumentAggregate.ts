@@ -12,8 +12,8 @@ export interface GeneratedDocumentProps {
   templateVersionId: string;
   workflowInstanceId?: string | null;
   workflowStageId?: string | null;
-  candidateId?: string | null;
-  employeeId?: string | null;
+  entityType: string;
+  entityId: string;
   status: DocumentGenerationStatus;
   generatedAt?: Date | null;
   generatedBy?: string | null;
@@ -62,11 +62,11 @@ export class GeneratedDocumentAggregate extends AggregateRoot<GeneratedDocumentP
   get workflowStageId(): string | null | undefined {
     return this.props.workflowStageId;
   }
-  get candidateId(): string | null | undefined {
-    return this.props.candidateId;
+  get entityType(): string {
+    return this.props.entityType;
   }
-  get employeeId(): string | null | undefined {
-    return this.props.employeeId;
+  get entityId(): string {
+    return this.props.entityId;
   }
   get status(): DocumentGenerationStatus {
     return this.props.status;
@@ -104,35 +104,38 @@ export class GeneratedDocumentAggregate extends AggregateRoot<GeneratedDocumentP
     snapshots: DocumentSnapshotVO[],
   ): void {
     const validStatuses = [
-      DocumentGenerationStatus.GENERATING,
-      DocumentGenerationStatus.PENDING,
-      DocumentGenerationStatus.DRAFT,
+      DocumentGenerationStatus.QUEUED,
+      DocumentGenerationStatus.PROCESSING,
     ];
-    if (!validStatuses.includes(this.props.status)) {
-      throw new Error('Can only mark generating document as generated.');
+    if (!validStatuses.includes(this.props.status as any)) {
+      throw new Error('Can only mark processing/queued document as generated.');
     }
-    this.props.status = DocumentGenerationStatus.GENERATED;
+    this.props.status = DocumentGenerationStatus.GENERATED as any;
     this.props.generatedAt = new Date();
     this.props.generatedBy = performedBy;
     this.props.snapshots.push(...snapshots);
   }
 
-  public fail(performedBy: string): void {
-    this.props.status = DocumentGenerationStatus.FAILED;
+  public markAsProcessing(performedBy: string): void {
+    if (this.props.status !== DocumentGenerationStatus.QUEUED as any) {
+      throw new Error('Can only process queued documents.');
+    }
+    this.props.status = DocumentGenerationStatus.PROCESSING as any;
     this.props.updatedBy = performedBy;
     this.props.updatedAt = new Date();
   }
 
-  public voidDocument(performedBy: string): void {
-    const validStatuses = [
-      DocumentGenerationStatus.GENERATED,
-      DocumentGenerationStatus.REVIEWED,
-      DocumentGenerationStatus.SENT,
-    ];
-    if (!validStatuses.includes(this.props.status)) {
-      throw new Error(`Cannot void document in status ${this.props.status}`);
+  public fail(performedBy: string): void {
+    this.props.status = DocumentGenerationStatus.FAILED as any;
+    this.props.updatedBy = performedBy;
+    this.props.updatedAt = new Date();
+  }
+
+  public archive(performedBy: string): void {
+    if (this.props.status !== DocumentGenerationStatus.GENERATED as any) {
+      throw new Error(`Cannot archive document in status ${this.props.status}`);
     }
-    this.props.status = DocumentGenerationStatus.VOIDED;
+    this.props.status = DocumentGenerationStatus.ARCHIVED as any;
     this.props.updatedBy = performedBy;
     this.props.updatedAt = new Date();
   }

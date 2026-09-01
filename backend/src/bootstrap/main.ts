@@ -62,7 +62,7 @@ async function bootstrap() {
   const port = configService.get<number>('PORT') || 3000;
   const env = configService.get<string>('NODE_ENV') || 'development';
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(
     `[Smatal ERP] Application running on port ${port} in ${env} mode`,
   );

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Eye, MoreHorizontal, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useModalStore } from '@/shared/modals/useModalStore';
+import { GenerateOfferForm } from '../forms/GenerateOfferForm';
 
 export function OfferList({ candidateId }: { candidateId: string }) {
   const { useOffers } = useOffer();
@@ -68,7 +69,7 @@ export function OfferList({ candidateId }: { candidateId: string }) {
           id: 'generate-offer',
           type: 'side-panel',
           title: 'Generate Offer',
-          content: <div className="p-4">Generate Offer Form Placeholder</div>,
+          content: <GenerateOfferForm candidateId={candidateId} />,
         })}>
           <Plus className="mr-2 h-4 w-4" />
           Generate Offer

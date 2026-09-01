@@ -16,26 +16,21 @@ interface DocumentGenerateFormProps {
 export function DocumentGenerateForm({ defaultValues }: DocumentGenerateFormProps) {
   const { generateDocument } = useDocument();
   const closeModal = useModalStore((state) => state.closeModal);
-  
   const form = useForm<GenerateDocumentFormData>({
     resolver: zodResolver(generateDocumentSchema),
     defaultValues: {
-      templateId: '',
-      profileId: defaultValues?.profileId || '',
-      candidateId: defaultValues?.candidateId || '',
-      employeeId: defaultValues?.employeeId || '',
+      documentTypeId: '',
+      entityType: defaultValues?.entityType || 'CANDIDATE',
+      entityId: defaultValues?.entityId || '',
       workflowInstanceId: defaultValues?.workflowInstanceId || '',
-      workflowStageId: defaultValues?.workflowStageId || '',
     },
   });
 
   const fields: FormFieldConfig[] = [
-    { name: 'templateId', label: 'Template ID', type: 'text', required: true, description: 'Enter the UUID of the Document Template' },
-    { name: 'profileId', label: 'Profile ID', type: 'text', required: true },
-    { name: 'candidateId', label: 'Candidate ID (Optional)', type: 'text' },
-    { name: 'employeeId', label: 'Employee ID (Optional)', type: 'text' },
+    { name: 'documentTypeId', label: 'Document Type ID', type: 'text', required: true, description: 'Enter the UUID of the Document Type' },
+    { name: 'entityType', label: 'Entity Type', type: 'text', required: true, description: 'E.g., CANDIDATE or EMPLOYEE' },
+    { name: 'entityId', label: 'Entity ID', type: 'text', required: true },
     { name: 'workflowInstanceId', label: 'Workflow Instance ID (Optional)', type: 'text' },
-    { name: 'workflowStageId', label: 'Workflow Stage ID (Optional)', type: 'text' },
   ];
 
   const onSubmit = (data: GenerateDocumentFormData) => {

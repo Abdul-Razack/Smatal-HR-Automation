@@ -107,9 +107,14 @@ export abstract class PrismaRepository<
     const data = this.mapper.toPersistence(entity) as any;
 
     if (data.id) {
+      const selectObj: any = { id: true };
+      if (data.version !== undefined) {
+        selectObj.version = true;
+      }
+
       const existing = await this.delegate.findUnique({
         where: { id: data.id },
-        select: { id: true, version: true },
+        select: selectObj,
       });
 
       if (existing) {

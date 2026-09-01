@@ -83,10 +83,11 @@ enum TemplateVersionStatus {
 }
 
 enum DocumentGenerationStatus {
-  PENDING
+  QUEUED
   PROCESSING
-  COMPLETED
+  GENERATED
   FAILED
+  ARCHIVED
 }
 
 enum WorkflowStatus {
@@ -799,7 +800,7 @@ model TemplatePlaceholder {
   createdBy         String   @db.Uuid
   updatedBy         String   @db.Uuid
 
-  templateVersion TemplateVersion @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
+  templateVersion TemplateVersion  @relation(fields: [templateVersionId], references: [id], onDelete: Cascade)
   fieldDefinition FieldDefinition? @relation(fields: [fieldDefinitionId], references: [id], onDelete: Restrict)
 
   @@unique([templateVersionId, placeholderKey])
@@ -930,9 +931,9 @@ model GeneratedDocument {
   templateVersionId  String                   @db.Uuid
   workflowInstanceId String?                  @db.Uuid
   workflowStageId    String?                  @db.Uuid
-  candidateId        String?                  @db.Uuid
-  employeeId         String?                  @db.Uuid
-  status             DocumentGenerationStatus @default(PENDING)
+  entityType         String                   @db.VarChar(50)
+  entityId           String                   @db.Uuid
+  status             DocumentGenerationStatus @default(QUEUED)
   generatedAt        DateTime?
   generatedBy        String?                  @db.Uuid
   isDeleted          Boolean                  @default(false)
@@ -950,17 +951,18 @@ model GeneratedDocument {
   templateVersion  TemplateVersion    @relation(fields: [templateVersionId], references: [id], onDelete: Restrict)
   workflowInstance WorkflowInstance?  @relation(fields: [workflowInstanceId], references: [id])
   workflowStage    WorkflowStage?     @relation(fields: [workflowStageId], references: [id])
-  candidate        Candidate?         @relation(fields: [candidateId], references: [id])
-  employee         Employee?          @relation(fields: [employeeId], references: [id])
   snapshots        DocumentSnapshot[]
+  Candidate        Candidate?         @relation(fields: [candidateId], references: [id])
+  candidateId      String?            @db.Uuid
+  Employee         Employee?          @relation(fields: [employeeId], references: [id])
+  employeeId       String?            @db.Uuid
 
   @@index([companyId])
   @@index([profileId])
   @@index([documentTypeId])
   @@index([templateVersionId])
   @@index([workflowInstanceId])
-  @@index([candidateId])
-  @@index([employeeId])
+  @@index([entityType, entityId])
   @@index([status])
   @@index([isDeleted])
   @@map("generated_documents")

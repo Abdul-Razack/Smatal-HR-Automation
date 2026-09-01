@@ -80,6 +80,8 @@ import { PrismaEntityDataProvider } from './src/infrastructure/data/PrismaEntity
 import { PreviewTemplateHandler } from './src/application/queries/PreviewTemplate/PreviewTemplateHandler';
 import { PreviewUploadedTemplateHandler } from './src/application/queries/PreviewUploadedTemplate/PreviewUploadedTemplateHandler';
 
+import { OfferApprovedEventHandler } from './src/application/event-handlers/OfferApprovedEventHandler';
+
 const CommandHandlers = [
   // V1
   CreateDocumentTypeHandler,
@@ -91,6 +93,10 @@ const CommandHandlers = [
   ImportTemplateVersionHandler,
   MapTemplatePlaceholdersHandler,
   DeleteTemplateVersionCommandHandler,
+];
+
+const EventHandlers = [
+  OfferApprovedEventHandler,
 ];
 
 const QueryHandlers = [
@@ -130,6 +136,7 @@ const Repositories = [
   ],
   providers: [
     ...CommandHandlers,
+    ...EventHandlers,
     ...QueryHandlers,
     ...Repositories,
     // Mappers

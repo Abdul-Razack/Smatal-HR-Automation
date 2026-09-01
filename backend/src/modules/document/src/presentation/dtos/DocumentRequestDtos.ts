@@ -2,25 +2,21 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class GenerateDocumentRequestDto {
-  @ApiProperty({ description: 'The unique template ID to generate from' })
+
+  @ApiProperty({ description: 'The document type ID to generate' })
   @IsString()
   @IsNotEmpty()
-  templateId: string;
+  documentTypeId: string;
 
-  @ApiProperty({ description: 'The ID of the candidate or employee profile' })
+  @ApiProperty({ description: 'The entity type (e.g. CANDIDATE, EMPLOYEE)' })
   @IsString()
   @IsNotEmpty()
-  profileId: string;
+  entityType: string;
 
-  @ApiPropertyOptional({ description: 'The candidate ID, if applicable' })
-  @IsOptional()
+  @ApiProperty({ description: 'The entity ID' })
   @IsString()
-  candidateId?: string;
-
-  @ApiPropertyOptional({ description: 'The employee ID, if applicable' })
-  @IsOptional()
-  @IsString()
-  employeeId?: string;
+  @IsNotEmpty()
+  entityId: string;
 
   @ApiPropertyOptional({
     description: 'The workflow instance ID driving this generation',
@@ -28,11 +24,4 @@ export class GenerateDocumentRequestDto {
   @IsOptional()
   @IsString()
   workflowInstanceId?: string;
-
-  @ApiPropertyOptional({
-    description: 'The workflow stage ID driving this generation',
-  })
-  @IsOptional()
-  @IsString()
-  workflowStageId?: string;
 }

@@ -39,6 +39,20 @@ export class PrismaTemplateRepository implements ITemplateRepository {
     return this.mapper.toDomain(record);
   }
 
+  async findByDocumentTypeId(
+    documentTypeId: string,
+  ): Promise<TemplateAggregate[]> {
+    const records = await this.prisma.template.findMany({
+      where: { documentTypeId, isDeleted: false },
+      include: {
+        versions: {
+          include: { placeholders: true },
+        },
+      },
+    });
+    return records.map((record) => this.mapper.toDomain(record));
+  }
+
   async findManyPaginated(
     params: any,
   ): Promise<{ items: TemplateAggregate[]; total: number }> {

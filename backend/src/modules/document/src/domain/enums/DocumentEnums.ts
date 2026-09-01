@@ -15,6 +15,8 @@ export enum TemplateVersionStatus {
 export enum DocumentGenerationStatus {
   PENDING = 'PENDING',
   DRAFT = 'DRAFT',
+  QUEUED = 'QUEUED',
+  PROCESSING = 'PROCESSING',
   GENERATING = 'GENERATING',
   GENERATED = 'GENERATED',
   REVIEWED = 'REVIEWED',

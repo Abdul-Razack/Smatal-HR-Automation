@@ -112,8 +112,22 @@ export class GetReportHandler implements IQueryHandler<GetReportQuery> {
           data = depts;
           break;
         }
+        case 'HEADCOUNT': {
+          data = await this.prisma.employee.findMany({
+            where: { companyId: query.companyId, isDeleted: false, ...query.filters },
+            include: { department: true },
+          });
+          headers = ['Department', 'Employee Name', 'Status', 'Joined Date'];
+          rows = data.map((e) => [
+            e.department?.name || 'Unassigned',
+            `${e.profile?.firstName || ''} ${e.profile?.lastName || ''}`.trim(),
+            e.status,
+            e.joinedDate ? new Date(e.joinedDate).toLocaleDateString() : '',
+          ]);
+          break;
+        }
         default:
-          return Result.fail('Invalid report type');
+          return Result.fail('Invalid report type: ' + query.reportType);
       }
 
       return Result.ok({

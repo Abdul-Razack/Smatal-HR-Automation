@@ -91,7 +91,7 @@ export class GenerationOrchestrator {
       // 5. Upload Primary Document
       const primaryFileName = StoragePathBuilder.buildGeneratedDocumentPath(
         document.companyId,
-        document.employeeId,
+        document.entityId,
         document.businessId,
         renderResult.extension.replace('.', ''),
       );
@@ -127,7 +127,7 @@ export class GenerationOrchestrator {
       // 7. Upload PDF
       const pdfFileName = StoragePathBuilder.buildGeneratedDocumentPath(
         document.companyId,
-        document.employeeId,
+        document.entityId,
         document.businessId,
         'pdf',
       );

@@ -1,5 +1,14 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function OrganizationPage() {
-  redirect('/master/organization/departments');
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/master/organization/departments');
+  }, [router]);
+
+  return null;
 }

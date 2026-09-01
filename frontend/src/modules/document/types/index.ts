@@ -66,8 +66,8 @@ export interface GeneratedDocumentDto {
   generatedBy?: string;
   workflowInstanceId?: string;
   workflowStageId?: string;
-  candidateId?: string;
-  employeeId?: string;
+  entityType: string;
+  entityId: string;
   snapshots?: DocumentSnapshotDto[];
   createdAt: string;
   updatedAt: string;

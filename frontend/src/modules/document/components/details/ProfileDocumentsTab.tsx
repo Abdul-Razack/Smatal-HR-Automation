@@ -22,19 +22,23 @@ interface ProfileDocumentsTabProps {
 export function ProfileDocumentsTab({ entityType, entityId, profileId }: ProfileDocumentsTabProps) {
   const openModal = useModalStore((state) => state.openModal);
 
-  const filters: any = { profileId };
-  if (entityType === 'candidate') filters.candidateId = entityId;
-  if (entityType === 'employee') filters.employeeId = entityId;
+  const filters: any = { 
+    entityType: entityType.toUpperCase(),
+    entityId 
+  };
 
   const { useGeneratedDocuments } = useDocument();
   const { data: documents = [], isLoading } = useGeneratedDocuments(filters);
 
   const handleGenerate = () => {
-    const defaultValues: Partial<GenerateDocumentFormData> = { profileId };
+    const defaultValues: Partial<GenerateDocumentFormData> = {
+      entityType: entityType.toUpperCase(),
+      entityId,
+    };
     
-    if (entityType === 'candidate') defaultValues.candidateId = entityId;
-    if (entityType === 'employee') defaultValues.employeeId = entityId;
-    if (entityType === 'workflow') defaultValues.workflowInstanceId = entityId;
+    if (entityType === 'workflow') {
+      defaultValues.workflowInstanceId = entityId;
+    }
 
     openModal({
       id: 'generate-document',

@@ -16,7 +16,7 @@ export class AnalyticsController {
     const result = await this.queryBus.execute(
       new GetDashboardQuery(companyId, type || 'HR'),
     );
-    if (result.isFailure) throw new Error(result.error);
+    if (result.isFailure) throw new Error(result.errorValue);
     return result.getValue();
   }
 
@@ -36,7 +36,7 @@ export class AnalyticsController {
       ),
     );
 
-    if (result.isFailure) throw new Error(result.error);
+    if (result.isFailure) throw new Error(result.errorValue);
     return result.getValue();
   }
 
@@ -53,12 +53,12 @@ export class AnalyticsController {
     );
 
     if (result.isFailure) {
-      console.error('AnalyticsController getReport Error:', result.error);
+      console.error('AnalyticsController getReport Error:', result.errorValue);
       const { BadRequestException } = require('@nestjs/common');
       throw new BadRequestException(
-        typeof result.error === 'string'
-          ? result.error
-          : JSON.stringify(result.error),
+        typeof result.errorValue === 'string'
+          ? result.errorValue
+          : JSON.stringify(result.errorValue),
       );
     }
     return result.getValue();

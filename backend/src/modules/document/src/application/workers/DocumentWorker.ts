@@ -19,25 +19,27 @@ export class DocumentWorker extends WorkerHost {
     try {
       const {
         companyId,
-        profileId,
-        templateId,
+        documentTypeId,
+        entityType,
+        entityId,
+        workflowId,
+        actionId,
         performedBy,
-        candidateId,
-        employeeId,
-        workflowInstanceId,
-        workflowStageId,
       } = job.data;
 
       await this.commandBus.execute(
         new GenerateDocumentCommand(
           companyId,
-          profileId,
-          templateId,
+          documentTypeId,
+          entityType,
+          entityId,
+          {
+            workflowId,
+            actionId,
+            initiatedBy: performedBy,
+            effectiveDate: new Date(),
+          },
           performedBy,
-          candidateId,
-          employeeId,
-          workflowInstanceId,
-          workflowStageId,
         ),
       );
 

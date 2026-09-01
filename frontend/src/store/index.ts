@@ -96,7 +96,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ currentCompany: company });
   },
 
-  clear: () => set({
+  clear: () => {
+    storage.remove('access_token');
+    storage.remove('refresh_token');
+    storage.remove('company_id');
+    set({
       accessToken: null,
       refreshToken: null,
       currentUser: null,
@@ -104,5 +108,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       roles: [],
       permissions: [],
       status: 'unauthenticated',
-  }),
+    });
+  },
 }));

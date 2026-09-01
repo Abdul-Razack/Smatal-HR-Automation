@@ -108,13 +108,16 @@ export class GeneratedDocumentController {
     const result = await this.commandBus.execute(
       new GenerateDocumentCommand(
         companyId,
-        body.profileId,
-        body.templateId,
+        body.documentTypeId,
+        body.entityType,
+        body.entityId,
+        {
+          actionId: 'manual_trigger',
+          initiatedBy: userId,
+          effectiveDate: new Date(),
+          workflowId: body.workflowInstanceId,
+        },
         userId,
-        body.candidateId,
-        body.employeeId,
-        body.workflowInstanceId,
-        body.workflowStageId,
       ),
     );
     if (result.isFailure) throw new BadRequestException(result.error);

@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
+import { CommandHandler, ICommandHandler, EventBus } from '@nestjs/cqrs';
 import { GenerateOfferCommand } from './GenerateOfferCommand';
 import { Result } from '../../../../../../kernel/result/Result';
 import { IOfferRepository } from '../../../domain/repositories/IOfferRepository';
@@ -10,6 +10,7 @@ import { Identifier } from '../../../../../../kernel/domain/Identifier';
 import { OfferStatus } from '../../../domain/enums/OfferStatus';
 import { CandidateNotFoundException } from '../../../domain/exceptions/CandidateExceptions';
 import { CandidateStatus } from '../../../domain/enums/CandidateStatus';
+import { OfferApprovedEvent } from '../../../domain/events/OfferApprovedEvent';
 
 @CommandHandler(GenerateOfferCommand)
 @Injectable()
@@ -21,6 +22,7 @@ export class GenerateOfferHandler implements ICommandHandler<GenerateOfferComman
     private readonly candidateRepository: ICandidateRepository,
     @Inject('IUnitOfWork')
     private readonly unitOfWork: IUnitOfWork,
+    private readonly eventBus: EventBus,
   ) {}
 
   async execute(command: GenerateOfferCommand): Promise<Result<string>> {
@@ -43,7 +45,7 @@ export class GenerateOfferHandler implements ICommandHandler<GenerateOfferComman
           businessId,
           companyId: new Identifier(command.companyId),
           candidateId: command.candidateId,
-          status: OfferStatus.DRAFT,
+          status: OfferStatus.APPROVED, // Simulating workflow completion for MVP
           baseSalary: command.baseSalary,
           currency: command.currency,
           joiningDate: command.joiningDate,
@@ -64,6 +66,17 @@ export class GenerateOfferHandler implements ICommandHandler<GenerateOfferComman
         await this.candidateRepository.save(candidate);
         await this.offerRepository.save(offer);
       });
+
+      // Fire Domain Event to trigger async document generation (Decoupled Architecture)
+      this.eventBus.publish(
+        new OfferApprovedEvent(
+          id.toString(),
+          command.candidateId,
+          command.companyId,
+          command.documentTypeId,
+          command.performedBy,
+        )
+      );
 
       return Result.ok<string>(id.toString());
     } catch (error: any) {

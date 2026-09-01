@@ -76,7 +76,7 @@ export const setupInterceptors = (apiClient: AxiosInstance) => {
       const status = error.response?.status;
 
       // Global Error Toasts
-      if (status !== 401) {
+      if (status !== 401 && !originalRequest?.url?.includes('/auth/refresh')) {
         const data = error.response?.data as any;
         const message = data?.message || error.message || 'An unexpected error occurred';
         

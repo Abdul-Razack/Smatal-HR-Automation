@@ -29,8 +29,8 @@ export class GeneratedDocumentDtoMapper {
       status: domain.status,
       workflowInstanceId: domain.workflowInstanceId ?? undefined,
       workflowStageId: domain.workflowStageId ?? undefined,
-      candidateId: domain.candidateId ?? undefined,
-      employeeId: domain.employeeId ?? undefined,
+      entityType: domain.entityType,
+      entityId: domain.entityId,
       createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
       snapshots: domain.snapshots.map((s: DocumentSnapshotVO) =>

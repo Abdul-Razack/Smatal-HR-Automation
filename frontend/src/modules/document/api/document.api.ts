@@ -4,14 +4,12 @@ import { GeneratedDocumentDto, TemplateDto } from '../types';
 export const documentApi = {
   // Generated Documents
   generateDocument: async (data: {
-    profileId: string;
-    templateId: string;
-    candidateId?: string;
-    employeeId?: string;
+    documentTypeId: string;
+    entityType: string;
+    entityId: string;
     workflowInstanceId?: string;
-    workflowStageId?: string;
   }): Promise<{ id: string }> => {
-    const response = await apiClient.post('/generated-documents', data);
+    const response = await apiClient.post('/generated-documents/generate', data);
     return response.data;
   },
 
@@ -21,14 +19,12 @@ export const documentApi = {
   },
 
   getAllGeneratedDocuments: async (filters?: {
-    profileId?: string;
-    candidateId?: string;
-    employeeId?: string;
+    entityType?: string;
+    entityId?: string;
   }): Promise<GeneratedDocumentDto[]> => {
     const params = new URLSearchParams();
-    if (filters?.profileId) params.append('profileId', filters.profileId);
-    if (filters?.candidateId) params.append('candidateId', filters.candidateId);
-    if (filters?.employeeId) params.append('employeeId', filters.employeeId);
+    if (filters?.entityType) params.append('entityType', filters.entityType);
+    if (filters?.entityId) params.append('entityId', filters.entityId);
     
     const response = await apiClient.get(`/generated-documents?${params.toString()}`);
     return response.data;

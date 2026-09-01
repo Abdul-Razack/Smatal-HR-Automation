@@ -10,3 +10,12 @@ temp_pg_data
 coverage/
 build/
 .nyc_output/
+.next/
+*.tsbuildinfo
+backend/storage/
+*.log
+e2e_out.txt
+checkCompany.ts
+checkUser.ts
+listCompanies.ts
+testBcrypt.ts

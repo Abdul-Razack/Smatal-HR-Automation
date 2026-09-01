@@ -1,4 +1,5 @@
 import { apiClient } from '@/api/client';
+import { ApiResponse } from '@/shared/types';
 import {
   TemplateDto,
   TemplateSummaryDto,
@@ -61,7 +62,7 @@ export class DocumentApiService {
 
   static async getGlobalPlaceholders(): Promise<any[]> {
     const response = await apiClient.get<ApiResponse<any[]>>(`/templates/placeholders`);
-    return response.data.data;
+    return response.data.data || [];
   }
 
   static async publishVersion(templateId: string, versionId: string): Promise<void> {
@@ -72,8 +73,12 @@ export class DocumentApiService {
     await apiClient.post(`/templates/${templateId}/versions/${versionId}/rollback`);
   }
 
-  static async mapPlaceholders(templateId: string, versionId: string, mappings: Array<{ placeholderKey: string, fieldDefinitionId: string }>): Promise<void> {
-    await apiClient.post(`/templates/${templateId}/versions/${versionId}/map-placeholders`, { mappings });
+  static async mapPlaceholders(templateId: string, versionId: string, mappings: Array<{ placeholderKey: string, fieldDefinitionId: string, isRequired?: boolean }>): Promise<void> {
+    const formattedMappings = mappings.map(m => ({
+      ...m,
+      isRequired: m.isRequired ?? true
+    }));
+    await apiClient.post(`/templates/${templateId}/versions/${versionId}/map-placeholders`, { mappings: formattedMappings });
   }
 
   static async deleteTemplateVersion(templateId: string, versionId: string): Promise<void> {

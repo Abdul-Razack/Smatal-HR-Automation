@@ -51,11 +51,11 @@ export class GeneratedDocumentDto {
   })
   workflowStageId?: string;
 
-  @ApiPropertyOptional({ description: 'The candidate ID, if applicable' })
-  candidateId?: string;
+  @ApiProperty({ description: 'The entity type (e.g. CANDIDATE, EMPLOYEE)' })
+  entityType: string;
 
-  @ApiPropertyOptional({ description: 'The employee ID, if applicable' })
-  employeeId?: string;
+  @ApiProperty({ description: 'The entity ID' })
+  entityId: string;
 
   @ApiPropertyOptional({
     type: [DocumentSnapshotDto],

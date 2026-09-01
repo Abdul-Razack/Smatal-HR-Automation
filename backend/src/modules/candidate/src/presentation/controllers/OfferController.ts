@@ -30,6 +30,7 @@ export class OfferController {
       new GenerateOfferCommand(
         candidateId,
         req.user.companyId,
+        body.documentTypeId,
         body.baseSalary,
         body.currency,
         body.joiningDate ? new Date(body.joiningDate) : new Date(),

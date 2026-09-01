@@ -11,11 +11,23 @@ export const useDocument = () => {
     queryKey: ['generated-documents', id],
     queryFn: () => documentApi.getGeneratedDocument(id),
     enabled: !!id,
+    refetchInterval: (query) => {
+      const doc = query.state.data;
+      if (!doc) return false;
+      const isPending = doc.status === 'QUEUED' || doc.status === 'PROCESSING' || doc.status === 'GENERATING' || doc.status === 'PENDING';
+      return isPending ? 3000 : false;
+    }
   });
 
-  const useGeneratedDocuments = (filters?: { profileId?: string, candidateId?: string, employeeId?: string }) => useQuery({
+  const useGeneratedDocuments = (filters?: { entityType?: string, entityId?: string }) => useQuery({
     queryKey: ['generated-documents', 'list', filters],
     queryFn: () => documentApi.getAllGeneratedDocuments(filters),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return false;
+      const hasPending = data.some((doc) => doc.status === 'QUEUED' || doc.status === 'PROCESSING' || doc.status === 'GENERATING' || doc.status === 'PENDING');
+      return hasPending ? 3000 : false;
+    }
   });
 
   const useTemplate = (id: string) => useQuery({

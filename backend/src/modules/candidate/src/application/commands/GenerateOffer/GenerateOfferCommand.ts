@@ -4,6 +4,7 @@ export class GenerateOfferCommand implements ICommand {
   constructor(
     public readonly candidateId: string,
     public readonly companyId: string,
+    public readonly documentTypeId: string,
     public readonly baseSalary: number,
     public readonly currency: string,
     public readonly joiningDate: Date,

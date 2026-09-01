@@ -111,6 +111,9 @@ describe('Flow 3: Employee Setup (e2e)', () => {
       .set(TestConstants.HEADERS.TENANT_ID, TestConstants.SEED_DATA.TENANT_CODE)
       .expect(HttpStatus.CREATED);
 
+    if (!res.body.data.success) {
+      console.log('Activate Employee Error:', res.body);
+    }
     expect(res.body.data.success).toBe(true);
   });
 

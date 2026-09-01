@@ -9,7 +9,6 @@ import { IBusinessIdGenerator } from '../../../../../../kernel/application/servi
 import { DocumentDomainService } from '../../../domain/services/DocumentDomainService';
 import { GeneratedDocumentAggregate } from '../../../domain/aggregates/GeneratedDocumentAggregate';
 import { DocumentGenerationStatus } from '../../../domain/enums/DocumentEnums';
-import { AutomaticResolverService } from '../../../domain/services/AutomaticResolverService';
 import { ImmediateDispatcher } from '../../dispatchers/ImmediateDispatcher';
 import { PrismaEntityDataProvider } from '../../../infrastructure/data/PrismaEntityDataProvider';
 
@@ -27,65 +26,40 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
     @Inject('IBusinessIdGenerator')
     private readonly idGenerator: IBusinessIdGenerator,
     private readonly domainService: DocumentDomainService,
-    private readonly automaticResolver: AutomaticResolverService,
     private readonly dispatcher: ImmediateDispatcher,
     private readonly dataProvider: PrismaEntityDataProvider,
   ) {}
 
   async execute(command: GenerateDocumentCommand): Promise<Result<string>> {
     try {
-      const template = await this.templateRepo.findById(command.templateId);
-      if (!template) {
-        return Result.fail<string>(`Template not found: ${command.templateId}`);
-      }
-      if (template.companyId !== command.companyId) {
-        return Result.fail<string>(
-          `Unauthorized to access template ${command.templateId}`,
-        );
+      // Find the active template by DocumentTypeId
+      const templates = await this.templateRepo.findByDocumentTypeId(command.documentTypeId);
+      const activeTemplate = templates.find((t) => t.status === 'PUBLISHED' || t.status === 'DRAFT'); // Fallback to DRAFT if no published for MVP
+      
+      if (!activeTemplate) {
+        return Result.fail<string>(`No active template found for DocumentType: ${command.documentTypeId}`);
       }
 
-      this.domainService.validateTemplateForGeneration(template);
-      const activeVersion = template.getActiveVersion();
+      this.domainService.validateTemplateForGeneration(activeTemplate);
+      const activeVersion = activeTemplate.getActiveVersion();
       if (!activeVersion) {
         return Result.fail<string>(
-          `No active version found for template ${command.templateId}`,
+          `No active version found for template ${activeTemplate.id.toString()}`,
         );
       }
 
-      // Resolve placeholders automatically
-      const keys = activeVersion.placeholders.map((p) => p.placeholderKey);
-
-      const result = await this.automaticResolver.resolvePlaceholders(
-        keys,
-        {
-          companyId: command.companyId,
-          profileId: command.profileId,
-          candidateId: command.candidateId,
-          employeeId: command.employeeId,
-          userId: command.performedBy,
-        },
-        this.dataProvider
-      );
-
-      if (result.errors.length > 0) {
-        throw new Error(`Cannot generate document: ${result.errors.join(', ')}`);
-      }
-
-      const resolvedValues = result.resolvedValues;
-
-      // Create Document aggregate (GENERATING state)
+      // Create Document aggregate (QUEUED state)
       const businessId = await this.idGenerator.generate('GDOC');
       const document = GeneratedDocumentAggregate.create({
         businessId,
         companyId: command.companyId,
-        profileId: command.profileId,
-        documentTypeId: template.documentTypeId,
+        profileId: command.performedBy, // Profile is just a placeholder here in new design
+        documentTypeId: command.documentTypeId,
         templateVersionId: activeVersion.id.toValue() as string,
-        workflowInstanceId: command.workflowInstanceId,
-        workflowStageId: command.workflowStageId,
-        candidateId: command.candidateId,
-        employeeId: command.employeeId,
-        status: DocumentGenerationStatus.GENERATING,
+        workflowInstanceId: command.context.workflowId,
+        entityType: command.entityType,
+        entityId: command.entityId,
+        status: DocumentGenerationStatus.QUEUED as any,
         isDeleted: false,
         version: 1,
         createdAt: new Date(),
@@ -95,20 +69,21 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
         snapshots: [],
       });
 
-      // Save initial GENERATING state
+      // Save initial QUEUED state
       await this.unitOfWork.withTransaction(async () => {
         await this.documentRepo.save(document);
       });
 
-      // Construct context
+      // Pass context for async dispatcher
       const context = {
-        tenantId: command.companyId, // Assuming 1-to-1 for now
+        tenantId: command.companyId,
         companyId: command.companyId,
-        profileId: command.profileId,
-        employeeId: command.employeeId,
-        candidateId: command.candidateId,
-        workflowInstanceId: command.workflowInstanceId,
-        placeholders: resolvedValues,
+        profileId: command.performedBy,
+        entityType: command.entityType,
+        entityId: command.entityId,
+        workflowInstanceId: command.context.workflowId,
+        actionId: command.context.actionId,
+        placeholders: {}, // Resolved later asynchronously
         locale: 'en-US',
         timezone: 'UTC',
         currency: 'USD',
@@ -116,10 +91,10 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
         metadata: {},
       };
 
-      // Dispatch generation job (Sync for now)
+      // Dispatch generation job to process in the background
       await this.dispatcher.dispatch({
         document,
-        template,
+        template: activeTemplate,
         activeVersion,
         context,
         performedBy: command.performedBy,
@@ -127,7 +102,7 @@ export class GenerateDocumentHandler implements ICommandHandler<GenerateDocument
 
       return Result.ok<string>(document.id.toValue() as string);
     } catch (error: any) {
-      this.logger.error(`Document generation failed: ${error.message}`);
+      this.logger.error(`Document generation queue failed: ${error.message}`);
       return Result.fail<string>(error.message);
     }
   }
