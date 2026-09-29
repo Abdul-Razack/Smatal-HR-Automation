@@ -14,27 +14,61 @@ interface DocumentGenerateFormProps {
 }
 
 export function DocumentGenerateForm({ defaultValues }: DocumentGenerateFormProps) {
-  const { generateDocument } = useDocument();
+  const { generateDocument, useDocumentTypes } = useDocument();
+  const { data: documentTypes = [] } = useDocumentTypes({ isActive: true });
   const closeModal = useModalStore((state) => state.closeModal);
   const form = useForm<GenerateDocumentFormData>({
     resolver: zodResolver(generateDocumentSchema),
     defaultValues: {
-      documentTypeId: '',
-      entityType: defaultValues?.entityType || 'CANDIDATE',
+      documentTypeId: defaultValues?.documentTypeId || '',
+      entityType: defaultValues?.entityType || 'EMPLOYEE',
       entityId: defaultValues?.entityId || '',
       workflowInstanceId: defaultValues?.workflowInstanceId || '',
     },
   });
 
   const fields: FormFieldConfig[] = [
-    { name: 'documentTypeId', label: 'Document Type ID', type: 'text', required: true, description: 'Enter the UUID of the Document Type' },
-    { name: 'entityType', label: 'Entity Type', type: 'text', required: true, description: 'E.g., CANDIDATE or EMPLOYEE' },
-    { name: 'entityId', label: 'Entity ID', type: 'text', required: true },
-    { name: 'workflowInstanceId', label: 'Workflow Instance ID (Optional)', type: 'text' },
+    {
+      name: 'documentTypeId',
+      label: 'Document Type',
+      type: documentTypes.length > 0 ? 'select' : 'text',
+      required: true,
+      placeholder: 'Select Document Type',
+      options: documentTypes.map((dt) => ({
+        value: dt.id,
+        label: `${dt.name} (${dt.code})`,
+      })),
+      description: 'Select the official document type to generate',
+    },
+    {
+      name: 'entityType',
+      label: 'Entity Type',
+      type: 'text',
+      required: true,
+      readonly: true,
+      description: 'Entity to resolve placeholders for (e.g. EMPLOYEE)',
+    },
+    {
+      name: 'entityId',
+      label: 'Entity ID',
+      type: 'text',
+      required: true,
+      readonly: true,
+      description: 'Target employee or candidate UUID',
+    },
+    {
+      name: 'workflowInstanceId',
+      label: 'Workflow Instance ID (Optional)',
+      type: 'text',
+    },
   ];
 
   const onSubmit = (data: GenerateDocumentFormData) => {
-    generateDocument.mutate(data, {
+    const cleanData: GenerateDocumentFormData = {
+      ...data,
+      workflowInstanceId: data.workflowInstanceId?.trim() ? data.workflowInstanceId.trim() : undefined,
+    };
+    generateDocument.mutate(cleanData, {
       onSuccess: () => {
         closeModal('generate-document');
       }

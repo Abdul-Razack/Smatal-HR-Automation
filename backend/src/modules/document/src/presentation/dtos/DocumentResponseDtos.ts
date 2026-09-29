@@ -57,6 +57,43 @@ export class GeneratedDocumentDto {
   @ApiProperty({ description: 'The entity ID' })
   entityId: string;
 
+  @ApiPropertyOptional({ description: 'Company ID' })
+  companyId?: string;
+
+  @ApiPropertyOptional({ description: 'Template Version ID' })
+  templateVersionId?: string;
+
+  @ApiPropertyOptional({ description: 'Template ID' })
+  templateId?: string;
+
+  @ApiPropertyOptional({ description: 'Timestamp when document was generated' })
+  generatedAt?: Date;
+
+  @ApiPropertyOptional({ description: 'User or system that generated the document' })
+  generatedBy?: string;
+
+  // Provenance fields
+  @ApiPropertyOptional({ description: 'Human-readable document type name' })
+  documentTypeName?: string;
+
+  @ApiPropertyOptional({ description: 'Document type code' })
+  documentTypeCode?: string;
+
+  @ApiPropertyOptional({ description: 'Template name' })
+  templateName?: string;
+
+  @ApiPropertyOptional({ description: 'Template version number (e.g. 1 for v1)' })
+  templateVersionNumber?: number;
+
+  @ApiPropertyOptional({ description: 'Employee full name' })
+  employeeName?: string;
+
+  @ApiPropertyOptional({ description: 'Employee code or number' })
+  employeeNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Company legal or trade name' })
+  companyName?: string;
+
   @ApiPropertyOptional({
     type: [DocumentSnapshotDto],
     description: 'List of generated files (e.g., DOCX and PDF versions)',

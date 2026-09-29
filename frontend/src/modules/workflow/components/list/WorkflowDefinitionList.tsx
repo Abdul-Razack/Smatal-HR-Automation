@@ -57,10 +57,30 @@ export function WorkflowDefinitionList() {
               <Send className="h-4 w-4" />
             </Button>
           )}
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              openModal({
+                id: 'edit-workflow-definition',
+                type: 'side-panel',
+                title: 'Edit Workflow Definition',
+                content: <WorkflowDefinitionForm initialData={row.original} />,
+              })
+            }
+            title="Edit Workflow Definition"
+          >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={() =>
+              alert('Workflow definition deletion is restricted when active workflow instances or employee approvals are linked.')
+            }
+            title="Delete Workflow Definition"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

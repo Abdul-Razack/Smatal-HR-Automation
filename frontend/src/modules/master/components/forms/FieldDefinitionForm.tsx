@@ -9,18 +9,18 @@ import { FormFieldConfig } from '@/shared/types';
 import { useMaster } from '../../hooks/useMaster';
 import { useModalStore } from '@/shared/modals/useModalStore';
 
-export function FieldDefinitionForm() {
+export function FieldDefinitionForm({ initialData }: { initialData?: any } = {}) {
   const { createFieldDefinition } = useMaster();
   const closeModal = useModalStore((state) => state.closeModal);
   
   const form = useForm<FieldDefinitionFormData>({
     resolver: zodResolver(fieldDefinitionSchema),
     defaultValues: {
-      machineKey: '',
-      displayName: '',
-      dataType: 'text',
-      entityType: 'Employee',
-      isRequired: false,
+      machineKey: initialData?.machineKey || '',
+      displayName: initialData?.displayName || '',
+      dataType: initialData?.dataType || 'text',
+      entityType: initialData?.entityType || 'Employee',
+      isRequired: initialData?.isRequired || false,
     },
   });
 

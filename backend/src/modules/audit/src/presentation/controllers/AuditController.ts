@@ -3,15 +3,21 @@ import {
   Get,
   Post,
   Body,
-  Headers,
-  Param,
   Query,
+  UseGuards,
+  Request,
+  BadRequestException,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
+import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
 import { CreateAuditLogCommand } from '../../application/commands/CreateAuditLog/CreateAuditLogCommand';
 import { GetAuditHistoryQuery } from '../../application/queries/GetAuditHistory/GetAuditHistoryQuery';
 import { AuditAction } from '../../domain/enums/AuditAction';
 
+@ApiTags('Audit')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('audit')
 export class AuditController {
   constructor(
@@ -20,18 +26,18 @@ export class AuditController {
   ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create an audit log record' })
   async createAuditLog(
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
+    @Request() req: any,
     @Body() body: any,
   ) {
     const result = await this.commandBus.execute(
       new CreateAuditLogCommand(
-        companyId,
+        req.user.companyId,
         body.entityType,
         body.entityBusinessId,
         body.action as AuditAction,
-        userId,
+        req.user.userId,
         body.beforeState,
         body.afterState,
         body.ipAddress,
@@ -40,27 +46,28 @@ export class AuditController {
       ),
     );
 
-    if (result.isFailure) throw new Error(result.error);
+    if (result.isFailure) throw new BadRequestException(result.error);
     return { id: result.getValue() };
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get audit history for authenticated tenant' })
   async getAuditHistory(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query('entityBusinessId') entityBusinessId?: string,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
   ) {
     const result = await this.queryBus.execute(
       new GetAuditHistoryQuery(
-        companyId,
+        req.user.companyId,
         entityBusinessId,
         limit ? Number(limit) : undefined,
         offset ? Number(offset) : undefined,
       ),
     );
 
-    if (result.isFailure) throw new Error(result.error);
+    if (result.isFailure) throw new BadRequestException(result.error);
     return result.getValue();
   }
 }

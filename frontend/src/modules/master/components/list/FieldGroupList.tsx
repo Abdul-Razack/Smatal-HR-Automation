@@ -33,10 +33,30 @@ export function FieldGroupList() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              openModal({
+                id: 'edit-field-group',
+                type: 'side-panel',
+                title: 'Edit Field Group',
+                content: <FieldGroupForm initialData={row.original} />,
+              })
+            }
+            title="Edit Field Group"
+          >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={() =>
+              alert('Field group deletion is restricted when fields are assigned to this group.')
+            }
+            title="Delete Field Group"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

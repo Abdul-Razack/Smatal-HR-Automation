@@ -26,6 +26,23 @@ export class GeneratedDocumentMapper implements Mapper<
       }),
     );
 
+    const employeeName = row.Employee?.profile
+      ? `${row.Employee.profile.firstName} ${row.Employee.profile.lastName}`.trim()
+      : row.profile
+      ? `${row.profile.firstName} ${row.profile.lastName}`.trim()
+      : undefined;
+
+    const employeeNumber =
+      row.Employee?.employeeNumber || row.Employee?.businessId || undefined;
+
+    const documentTypeName = row.documentType?.name || undefined;
+    const documentTypeCode = row.documentType?.code || undefined;
+    const templateName = row.templateVersion?.template?.name || undefined;
+    const templateVersionNumber = row.templateVersion?.versionNumber !== undefined
+      ? Number(row.templateVersion.versionNumber)
+      : undefined;
+    const companyName = row.company?.name || undefined;
+
     return GeneratedDocumentAggregate.create(
       {
         businessId: row.businessId,
@@ -47,6 +64,13 @@ export class GeneratedDocumentMapper implements Mapper<
         createdBy: row.createdBy,
         updatedBy: row.updatedBy,
         snapshots,
+        documentTypeName,
+        documentTypeCode,
+        templateName,
+        templateVersionNumber,
+        employeeName,
+        employeeNumber,
+        companyName,
       },
       new Identifier<string>(row.id),
     );
@@ -60,10 +84,11 @@ export class GeneratedDocumentMapper implements Mapper<
       profileId: domain.profileId,
       documentTypeId: domain.documentTypeId,
       templateVersionId: domain.templateVersionId,
-      workflowInstanceId: domain.workflowInstanceId,
-      workflowStageId: domain.workflowStageId,
+      workflowInstanceId: domain.workflowInstanceId && domain.workflowInstanceId.trim().length > 0 ? domain.workflowInstanceId : null,
+      workflowStageId: domain.workflowStageId && domain.workflowStageId.trim().length > 0 ? domain.workflowStageId : null,
       entityType: domain.entityType,
       entityId: domain.entityId,
+      employeeId: domain.entityType === 'EMPLOYEE' ? domain.entityId : null,
       status: domain.status,
       generatedAt: domain.generatedAt,
       generatedBy: domain.generatedBy,
@@ -93,14 +118,32 @@ export class GeneratedDocumentMapper implements Mapper<
     return {
       id: domain.id.toValue(),
       businessId: domain.businessId,
+      companyId: domain.companyId,
       status: domain.status,
       documentTypeId: domain.documentTypeId,
       templateVersionId: domain.templateVersionId,
       profileId: domain.profileId,
+      entityType: domain.entityType,
+      entityId: domain.entityId,
       generatedAt: domain.generatedAt,
+      generatedBy: domain.generatedBy,
+      createdAt: domain.createdAt,
+      updatedAt: domain.updatedAt,
+      // Provenance
+      documentTypeName: domain.documentTypeName,
+      documentTypeCode: domain.documentTypeCode,
+      templateName: domain.templateName,
+      templateVersionNumber: domain.templateVersionNumber,
+      employeeName: domain.employeeName,
+      employeeNumber: domain.employeeNumber,
+      companyName: domain.companyName,
       snapshots: domain.snapshots.map((s) => ({
         id: s.id,
         fileUrl: s.fileUrl,
+        filePath: s.filePath,
+        fileSize: s.fileSize,
+        mimeType: s.mimeType,
+        checksum: s.checksum,
         createdAt: s.createdAt,
       })),
     };

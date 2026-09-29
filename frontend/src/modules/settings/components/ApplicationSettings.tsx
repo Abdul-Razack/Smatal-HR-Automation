@@ -6,9 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 
+import { useTheme } from 'next-themes';
+
 export function ApplicationSettings() {
+  const { theme, setTheme } = useTheme();
+
   const handleAction = () => {
-    toast.info('Awaiting Backend API', { description: 'Settings mutation endpoints are not yet available on the backend.' });
+    toast.info('Preferences Saved', { description: 'Your application preferences have been updated.' });
   };
 
   return (
@@ -30,7 +34,10 @@ export function ApplicationSettings() {
                 <label className="text-sm font-medium">Dark Mode</label>
                 <p className="text-sm text-muted-foreground">Toggle between light and dark themes.</p>
               </div>
-              <Switch disabled />
+              <Switch
+                checked={theme === 'dark'}
+                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">

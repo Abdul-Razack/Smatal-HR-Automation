@@ -60,6 +60,27 @@ export class DocumentApiService {
     });
   }
 
+  static async saveHtmlTemplateVersion(
+    templateId: string,
+    data: { content: string; notes?: string }
+  ): Promise<{ versionId: string; versionNumber: number; detectedPlaceholders: string[] }> {
+    const response = await apiClient.post(`/templates/${templateId}/versions/html`, data);
+    return response.data.data;
+  }
+
+  static async previewTemplate(
+    templateId: string,
+    data: {
+      mode: 'SAMPLE' | 'LIVE';
+      format?: 'HTML' | 'PDF';
+      employeeId?: string;
+      candidateId?: string;
+    }
+  ): Promise<any> {
+    const response = await apiClient.post(`/templates/${templateId}/preview`, data);
+    return response.data.data;
+  }
+
   static async getGlobalPlaceholders(): Promise<any[]> {
     const response = await apiClient.get<ApiResponse<any[]>>(`/templates/placeholders`);
     return response.data.data || [];
@@ -125,5 +146,42 @@ export class DocumentApiService {
   static async getDocumentDownload(id: string, format: 'pdf' | 'docx'): Promise<DocumentDownloadDto> {
     const response = await apiClient.get(`/documents/${id}/download`, { params: { format } });
     return response.data.data;
+  }
+
+  static async downloadDocumentFile(id: string, format: 'pdf' | 'docx' = 'pdf', customFilename?: string): Promise<void> {
+    const response = await apiClient.get(`/documents/${id}/download`, {
+      params: { format },
+      responseType: 'blob',
+    });
+
+    let filename = customFilename || `document_${id}.${format}`;
+    const disposition = response.headers?.['content-disposition'];
+    if (disposition) {
+      const match = disposition.match(/filename="?([^";]+)"?/);
+      if (match && match[1]) {
+        filename = match[1];
+      }
+    }
+
+    const blobUrl = window.URL.createObjectURL(
+      new Blob([response.data], {
+        type: String(response.headers?.['content-type'] || 'application/pdf'),
+      }),
+    );
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  }
+
+  static async getDocumentPreviewBlob(id: string, format: 'pdf' | 'html' = 'pdf'): Promise<Blob> {
+    const response = await apiClient.get(`/documents/${id}/preview`, {
+      params: { format },
+      responseType: 'blob',
+    });
+    return response.data;
   }
 }

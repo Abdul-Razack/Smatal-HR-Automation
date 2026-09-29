@@ -7,6 +7,31 @@ export type DocumentGenerationStatus =
   | 'REVIEWED' | 'SENT' | 'ACCEPTED' | 'REJECTED' | 'SIGNED' 
   | 'ARCHIVED' | 'VOIDED' | 'FAILED';
 
+export interface DocumentTypeDto {
+  id: string;
+  businessId: string;
+  companyId: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  generatedDocumentsCount?: number;
+  templatesCount?: number;
+}
+
+export interface CreateDocumentTypeInput {
+  name: string;
+  code: string;
+  description?: string;
+}
+
+export interface UpdateDocumentTypeInput {
+  name: string;
+  description?: string | null;
+}
+
 export interface PlaceholderDto {
   placeholderKey: string;
   fieldDefinitionId?: string;
@@ -18,11 +43,23 @@ export interface TemplateVersionDto {
   versionNumber: number;
   status: TemplateVersionStatus;
   contentType: string;
+  content?: string;
   notes?: string;
   importStatus?: TemplateImportStatus;
   originalFilename?: string;
   placeholders?: PlaceholderDto[];
   createdAt: string;
+}
+
+export interface PreviewResponseDto {
+  html?: string;
+  pdfBuffer?: any;
+  contentBase64?: string;
+  mimeType?: string;
+  resolvedKeys: string[];
+  unresolvedKeys: string[];
+  errors: string[];
+  warnings: string[];
 }
 
 export interface TemplateSummaryDto {
@@ -31,6 +68,8 @@ export interface TemplateSummaryDto {
   name: string;
   status: TemplateStatus;
   versionCount: number;
+  documentTypeId?: string;
+  documentTypeName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -64,6 +103,15 @@ export interface GeneratedDocumentDto {
   templateId?: string;
   templateVersionId?: string;
   generatedBy?: string;
+  generatedAt?: string;
+  companyId?: string;
+  companyName?: string;
+  documentTypeName?: string;
+  documentTypeCode?: string;
+  templateName?: string;
+  templateVersionNumber?: number;
+  employeeName?: string;
+  employeeNumber?: string;
   workflowInstanceId?: string;
   workflowStageId?: string;
   entityType: string;

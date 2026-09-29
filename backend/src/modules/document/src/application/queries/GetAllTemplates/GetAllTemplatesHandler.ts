@@ -44,8 +44,16 @@ export class GetAllTemplatesHandler implements IQueryHandler<GetAllTemplatesQuer
             businessId: true,
             name: true,
             status: true,
+            documentTypeId: true,
             createdAt: true,
             updatedAt: true,
+            documentType: {
+              select: {
+                id: true,
+                name: true,
+                code: true,
+              },
+            },
             _count: {
               select: { versions: true },
             },
@@ -62,6 +70,8 @@ export class GetAllTemplatesHandler implements IQueryHandler<GetAllTemplatesQuer
         name: r.name,
         status: r.status as TemplateStatus,
         versionCount: r._count.versions,
+        documentTypeId: r.documentTypeId,
+        documentTypeName: r.documentType?.name || '',
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
       }));

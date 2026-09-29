@@ -24,6 +24,14 @@ export interface GeneratedDocumentProps {
   createdBy: string;
   updatedBy: string;
   snapshots: DocumentSnapshotVO[];
+  // Provenance metadata (optional, populated from relations)
+  documentTypeName?: string;
+  documentTypeCode?: string;
+  templateName?: string;
+  templateVersionNumber?: number;
+  employeeName?: string;
+  employeeNumber?: string;
+  companyName?: string;
 }
 
 export class GeneratedDocumentAggregate extends AggregateRoot<GeneratedDocumentProps> {
@@ -97,6 +105,27 @@ export class GeneratedDocumentAggregate extends AggregateRoot<GeneratedDocumentP
   }
   get snapshots(): DocumentSnapshotVO[] {
     return this.props.snapshots;
+  }
+  get documentTypeName(): string | undefined {
+    return this.props.documentTypeName;
+  }
+  get documentTypeCode(): string | undefined {
+    return this.props.documentTypeCode;
+  }
+  get templateName(): string | undefined {
+    return this.props.templateName;
+  }
+  get templateVersionNumber(): number | undefined {
+    return this.props.templateVersionNumber;
+  }
+  get employeeName(): string | undefined {
+    return this.props.employeeName;
+  }
+  get employeeNumber(): string | undefined {
+    return this.props.employeeNumber;
+  }
+  get companyName(): string | undefined {
+    return this.props.companyName;
   }
 
   public markAsGenerated(

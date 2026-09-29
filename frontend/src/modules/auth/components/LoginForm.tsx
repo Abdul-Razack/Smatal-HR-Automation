@@ -7,6 +7,7 @@ import { loginSchema, LoginFormData } from '../schemas/login.schema';
 import { useAuth } from '../hooks/useAuth';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { storage } from '@/utils/storage';
 
 interface LoginFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -17,6 +18,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -27,15 +29,30 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
     },
   });
 
+  // Pre-fill email and rememberMe if previously saved
+  React.useEffect(() => {
+    const savedEmail = storage.get('remembered_email');
+    const isRemembered = storage.get('remember_me');
+    if (savedEmail) {
+      setValue('email', savedEmail);
+      setValue('rememberMe', Boolean(isRemembered));
+    }
+  }, [setValue]);
+
   const onSubmit = (data: LoginFormData) => {
-    console.log('--- LOGIN SUBMIT CLICKED ---');
-    console.log('Form data:', data);
+    if (data.rememberMe) {
+      storage.set('remembered_email', data.email);
+      storage.set('remember_me', true);
+    } else {
+      storage.remove('remembered_email');
+      storage.remove('remember_me');
+    }
     login(data);
   };
 
   return (
     <div className={cn('grid gap-6', className)} {...props}>
-      <form onSubmit={handleSubmit(onSubmit, (errs) => console.log('VALIDATION ERRORS:', errs))}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <div className="grid gap-4">
           <div className="grid gap-1">
             <label className="text-sm font-medium leading-none" htmlFor="email">
@@ -105,7 +122,6 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
           <button
             type="submit"
             disabled={isLoggingIn}
-            onClick={() => console.log('BUTTON CLICKED NATIVELY')}
             className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
           >
             {isLoggingIn && (

@@ -21,8 +21,7 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
         const stats = await this.getDocStats(query.companyId);
         return Result.ok(stats);
       } else if (query.dashboardType === 'ATS') {
-        const stats = await this.getATSStats(query.companyId);
-        return Result.ok(stats);
+        return Result.fail('ATS and recruitment analytics are disabled in this minimalist HR system');
       }
 
       return Result.fail('Invalid dashboard type');
@@ -32,51 +31,221 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
   }
 
   private async getHRStats(companyId: string) {
-    const totalCandidates = await this.prisma.candidate.count({
-      where: { companyId, isDeleted: false },
-    });
-    const activeCandidates = await this.prisma.candidate.count({
-      where: {
-        companyId,
-        isDeleted: false,
-        status: { in: ['APPLIED', 'SCREENING', 'INTERVIEWING', 'SELECTED'] },
-      },
-    });
-    const convertedCandidates = await this.prisma.candidate.count({
-      where: { companyId, isDeleted: false, status: 'CONVERTED' },
-    });
-    const activeEmployees = await this.prisma.employee.count({
-      where: { companyId, isDeleted: false, status: 'ACTIVE' },
-    });
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const next30Days = new Date(todayStart.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // We can join with workflow to get workflow counts
-    const runningWorkflows = await this.prisma.workflowInstance.count({
-      where: { companyId, status: 'IN_PROGRESS' },
-    });
-    const completedWorkflows = await this.prisma.workflowInstance.count({
-      where: { companyId, status: 'COMPLETED' },
-    });
-
-    const recentHires = await this.prisma.employee.findMany({
-      where: { companyId, isDeleted: false },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: { profile: true },
-    });
-
-    return {
-      totalCandidates,
-      activeCandidates,
-      convertedCandidates,
-      activeEmployees,
+    // 1. Group employees by status and fetch aggregates in parallel
+    const [
+      totalEmployees,
+      statusGroups,
+      pendingResignations,
       runningWorkflows,
       completedWorkflows,
-      recentHires: recentHires.map((h: any) => ({
-        id: h.id,
-        businessId: h.businessId,
-        name: `${h.profile.firstName} ${h.profile.lastName}`,
-        joinedAt: h.createdAt,
-      })),
+      generatedDocuments,
+    ] = await Promise.all([
+      this.prisma.employee.count({
+        where: { companyId, isDeleted: false },
+      }),
+      this.prisma.employee.groupBy({
+        by: ['status'],
+        where: { companyId, isDeleted: false },
+        _count: { id: true },
+      }),
+      this.prisma.resignation.count({
+        where: { companyId, status: 'SUBMITTED', isDeleted: false },
+      }),
+      this.prisma.workflowInstance.count({
+        where: { companyId, status: 'IN_PROGRESS' },
+      }),
+      this.prisma.workflowInstance.count({
+        where: { companyId, status: 'COMPLETED' },
+      }),
+      this.prisma.generatedDocument.count({
+        where: { companyId },
+      }),
+    ]);
+
+    const statusCounts: Record<string, number> = {};
+    for (const group of statusGroups) {
+      statusCounts[group.status] = group._count.id;
+    }
+
+    const offerEmployees = statusCounts['OFFER'] || 0;
+    const joinedEmployees = statusCounts['JOINED'] || 0;
+    const probationEmployees = statusCounts['PROBATION'] || 0;
+    const confirmedEmployees = statusCounts['CONFIRMED'] || 0;
+    const noticePeriodEmployees =
+      (statusCounts['NOTICE_PERIOD'] || 0) + (statusCounts['NOTICE'] || 0);
+    const relievedEmployees =
+      (statusCounts['RELIEVED'] || 0) +
+      (statusCounts['TERMINATED'] || 0) +
+      (statusCounts['RESIGNED'] || 0) +
+      (statusCounts['RETIRED'] || 0);
+
+    // Active employees are currently employed (joined, probation, confirmed, notice period, active/onboarding)
+    const activeEmployees =
+      joinedEmployees +
+      probationEmployees +
+      confirmedEmployees +
+      noticePeriodEmployees +
+      (statusCounts['ACTIVE'] || 0) +
+      (statusCounts['ONBOARDING'] || 0);
+
+    const lifecycleBreakdown = {
+      OFFER: offerEmployees,
+      JOINED: joinedEmployees,
+      PROBATION: probationEmployees,
+      CONFIRMED: confirmedEmployees,
+      NOTICE_PERIOD: noticePeriodEmployees,
+      RELIEVED: relievedEmployees,
+    };
+
+    // 2. Fetch specific list sections in parallel (limited sets)
+    const [newJoinersRaw, upcomingConfirmationsRaw, noticePeriodRaw, recentRelievedRaw] =
+      await Promise.all([
+        // New Joiners This Month
+        this.prisma.employee.findMany({
+          where: {
+            companyId,
+            isDeleted: false,
+            joinedDate: {
+              gte: startOfMonth,
+              lte: endOfMonth,
+            },
+          },
+          orderBy: { joinedDate: 'desc' },
+          take: 10,
+          include: {
+            profile: { select: { firstName: true, lastName: true } },
+            department: { select: { name: true } },
+            designation: { select: { name: true } },
+          },
+        }),
+        // Upcoming Confirmations (next 30 days)
+        this.prisma.employee.findMany({
+          where: {
+            companyId,
+            isDeleted: false,
+            status: 'PROBATION',
+            OR: [
+              {
+                confirmationDate: {
+                  gte: todayStart,
+                  lte: next30Days,
+                },
+              },
+              {
+                probationEndDate: {
+                  gte: todayStart,
+                  lte: next30Days,
+                },
+              },
+            ],
+          },
+          orderBy: [{ confirmationDate: 'asc' }, { probationEndDate: 'asc' }],
+          take: 10,
+          include: {
+            profile: { select: { firstName: true, lastName: true } },
+            department: { select: { name: true } },
+            designation: { select: { name: true } },
+          },
+        }),
+        // Employees in Notice Period
+        this.prisma.employee.findMany({
+          where: {
+            companyId,
+            isDeleted: false,
+            status: { in: ['NOTICE_PERIOD', 'NOTICE'] },
+          },
+          orderBy: { lastWorkingDate: 'asc' },
+          take: 10,
+          include: {
+            profile: { select: { firstName: true, lastName: true } },
+            department: { select: { name: true } },
+            designation: { select: { name: true } },
+          },
+        }),
+        // Recently Relieved Employees
+        this.prisma.employee.findMany({
+          where: {
+            companyId,
+            isDeleted: false,
+            status: { in: ['RELIEVED', 'TERMINATED', 'RESIGNED', 'RETIRED'] },
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 5,
+          include: {
+            profile: { select: { firstName: true, lastName: true } },
+            department: { select: { name: true } },
+            designation: { select: { name: true } },
+          },
+        }),
+      ]);
+
+    const newJoinersThisMonth = newJoinersRaw.map((e: any) => ({
+      id: e.id,
+      employeeId: e.businessId || e.employeeNumber || e.id,
+      name: `${e.profile?.firstName || ''} ${e.profile?.lastName || ''}`.trim() || 'Unnamed Employee',
+      department: e.department?.name || 'Unassigned',
+      designation: e.designation?.name || 'Unassigned',
+      joiningDate: e.joinedDate,
+    }));
+
+    const upcomingConfirmations = upcomingConfirmationsRaw.map((e: any) => ({
+      id: e.id,
+      employeeId: e.businessId || e.employeeNumber || e.id,
+      name: `${e.profile?.firstName || ''} ${e.profile?.lastName || ''}`.trim() || 'Unnamed Employee',
+      department: e.department?.name || 'Unassigned',
+      designation: e.designation?.name || 'Unassigned',
+      confirmationDate: e.confirmationDate || e.probationEndDate,
+    }));
+
+    const noticePeriodList = noticePeriodRaw.map((e: any) => ({
+      id: e.id,
+      employeeId: e.businessId || e.employeeNumber || e.id,
+      name: `${e.profile?.firstName || ''} ${e.profile?.lastName || ''}`.trim() || 'Unnamed Employee',
+      department: e.department?.name || 'Unassigned',
+      designation: e.designation?.name || 'Unassigned',
+      lastWorkingDate: e.lastWorkingDate,
+    }));
+
+    const recentRelieved = recentRelievedRaw.map((e: any) => ({
+      id: e.id,
+      employeeId: e.businessId || e.employeeNumber || e.id,
+      name: `${e.profile?.firstName || ''} ${e.profile?.lastName || ''}`.trim() || 'Unnamed Employee',
+      department: e.department?.name || 'Unassigned',
+      designation: e.designation?.name || 'Unassigned',
+      relievedDate: e.lastWorkingDate || e.terminationDate || e.updatedAt,
+    }));
+
+    // Backwards-compatible recentHires for any existing code
+    const recentHires = newJoinersThisMonth.slice(0, 5).map((h) => ({
+      id: h.id,
+      businessId: h.employeeId,
+      name: h.name,
+      joinedAt: h.joiningDate,
+    }));
+
+    return {
+      totalEmployees,
+      activeEmployees,
+      probationEmployees,
+      confirmedEmployees,
+      noticePeriodEmployees,
+      relievedEmployees,
+      lifecycleBreakdown,
+      newJoinersThisMonth,
+      upcomingConfirmations,
+      noticePeriodList,
+      pendingResignations,
+      recentRelieved,
+      runningWorkflows,
+      completedWorkflows,
+      generatedDocuments,
+      recentHires,
     };
   }
 
@@ -97,7 +266,6 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
       return { department: dept?.name || 'Unknown', count: stat._count.id };
     });
 
-    // We can do similar for Designations and Branches
     return {
       employeesByDepartment: byDepartment,
     };
@@ -112,51 +280,6 @@ export class GetDashboardHandler implements IQueryHandler<GetDashboardQuery> {
 
     return {
       documentsByType: docTypes,
-    };
-  }
-
-  private async getATSStats(companyId: string) {
-    const totalCandidates = await this.prisma.candidate.count({
-      where: { companyId, isDeleted: false },
-    });
-
-    // We can join with offer to get offer counts
-    const offersPending = 0; // await this.prisma.offerLetter.count({
-      // where: { companyId, status: 'PENDING' },
-    // });
-    
-    const offersAccepted = 0; // await this.prisma.offerLetter.count({
-      // where: { companyId, status: 'ACCEPTED' },
-    // });
-
-    const interviewsToday = 0; // await this.prisma.interviewSchedule.count({
-      // where: {
-        // companyId,
-        // scheduledDate: {
-          // gte: startOfDay,
-          // lte: endOfDay,
-        // },
-      // },
-    // });
-
-    const recentCandidates = await this.prisma.candidate.findMany({
-      where: { companyId, isDeleted: false },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      include: { profile: true },
-    });
-
-    return {
-      totalCandidates,
-      interviewsToday,
-      offersPending,
-      offersAccepted,
-      recentCandidates: recentCandidates.map((c: any) => ({
-        id: c.id,
-        name: `${c.profile.firstName} ${c.profile.lastName}`,
-        status: c.status,
-        appliedAt: c.createdAt,
-      })),
     };
   }
 }

@@ -69,6 +69,22 @@ export class DocumentTypeAggregate extends AggregateRoot<DocumentTypeProps> {
     return this.props.updatedBy;
   }
 
+  public updateDetails(
+    name: string,
+    description?: string | null,
+    performedBy?: string,
+  ): void {
+    this.props.name = name;
+    if (description !== undefined) {
+      this.props.description = description;
+    }
+    if (performedBy) {
+      this.props.updatedBy = performedBy;
+    }
+    this.props.updatedAt = new Date();
+    this.props.version++;
+  }
+
   public deactivate(performedBy: string): void {
     this.props.isActive = false;
     this.props.updatedBy = performedBy;

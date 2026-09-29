@@ -22,10 +22,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     // Passport automatically attaches this return value to req.user
     return {
+      id: payload.sub,
       userId: payload.sub,
       email: payload.email,
       companyId: payload.companyId,
       profileId: payload.profileId,
+      roles: payload.roles || [],
+      permissions: payload.permissions || [],
     };
   }
 }

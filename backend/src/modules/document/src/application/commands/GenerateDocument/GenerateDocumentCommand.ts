@@ -13,5 +13,6 @@ export class GenerateDocumentCommand {
     public readonly entityId: string,
     public readonly context: GenerationContext,
     public readonly performedBy: string,
+    public readonly templateId?: string,
   ) {}
 }

@@ -9,6 +9,7 @@ import { GetReportHandler } from './src/application/queries/GetReport/GetReportH
 
 // Controllers
 import { AnalyticsController } from './src/presentation/controllers/AnalyticsController';
+import { DashboardController } from './src/presentation/controllers/DashboardController';
 
 const QueryHandlers = [
   GetDashboardHandler,
@@ -18,7 +19,7 @@ const QueryHandlers = [
 
 @Module({
   imports: [CqrsModule, DatabaseModule],
-  controllers: [AnalyticsController],
+  controllers: [AnalyticsController, DashboardController],
   providers: [...QueryHandlers],
 })
 export class AnalyticsModule {}

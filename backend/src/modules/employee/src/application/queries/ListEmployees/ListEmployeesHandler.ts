@@ -16,6 +16,16 @@ export class ListEmployeesHandler implements IQueryHandler<ListEmployeesQuery> {
     const where: any = { companyId: query.companyId, isDeleted: false };
     if (query.status) where.status = query.status;
     if (query.departmentId) where.departmentId = query.departmentId;
+    if (query.search && query.search.trim().length > 0) {
+      const search = query.search.trim();
+      where.OR = [
+        { businessId: { contains: search, mode: 'insensitive' } },
+        { employeeNumber: { contains: search, mode: 'insensitive' } },
+        { profile: { firstName: { contains: search, mode: 'insensitive' } } },
+        { profile: { lastName: { contains: search, mode: 'insensitive' } } },
+        { profile: { personalEmail: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
 
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 100);
@@ -32,10 +42,11 @@ export class ListEmployeesHandler implements IQueryHandler<ListEmployeesQuery> {
         orderBy,
         include: {
           profile: {
-            select: { firstName: true, lastName: true, personalEmail: true, phone: true, profilePhoto: true }
+            select: { firstName: true, lastName: true, personalEmail: true, phone: true, profilePhoto: true, address: true, dateOfBirth: true, gender: true }
           },
           department: { select: { id: true, name: true } },
-          designation: { select: { id: true, name: true } }
+          designation: { select: { id: true, name: true } },
+          branch: { select: { id: true, name: true } },
         }
       }),
       this.prisma.employee.count({ where }),
@@ -56,6 +67,8 @@ export class ListEmployeesHandler implements IQueryHandler<ListEmployeesQuery> {
       dto.branchId = employee.branchId;
       dto.reportsToId = employee.reportsToId;
       dto.employeeNumber = employee.employeeNumber;
+      dto.employmentType = employee.employmentType;
+      dto.salary = employee.salary ? Number(employee.salary) : null;
       dto.confirmationDate = employee.confirmationDate;
       dto.probationEndDate = employee.probationEndDate;
       dto.terminationDate = employee.terminationDate;
@@ -69,6 +82,7 @@ export class ListEmployeesHandler implements IQueryHandler<ListEmployeesQuery> {
       dto.profile = employee.profile;
       dto.department = employee.department;
       dto.designation = employee.designation;
+      dto.branch = employee.branch;
       return dto;
     });
 

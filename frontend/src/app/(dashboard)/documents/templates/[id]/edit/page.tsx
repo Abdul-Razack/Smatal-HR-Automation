@@ -2,14 +2,14 @@
 
 import * as React from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ChevronLeft, Save, Eye } from 'lucide-react';
+import { ChevronLeft, Save, Eye, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TemplateEditor } from '@/modules/document/components/editor/TemplateEditor';
 import { PreviewTemplateModal } from '@/modules/document/components/details/PreviewTemplateModal';
-import { useTemplate, useUploadTemplateVersion } from '@/modules/document/hooks/useDocumentQueries';
+import { useTemplate, useSaveHtmlVersion } from '@/modules/document/hooks/useDocumentQueries';
 import { apiClient as api } from '@/api/client';
 
 export default function TemplateEditorPage() {
@@ -18,7 +18,7 @@ export default function TemplateEditorPage() {
   const templateId = params.id as string;
 
   const { data: template, isLoading, isError } = useTemplate(templateId);
-  const uploadVersion = useUploadTemplateVersion(templateId);
+  const saveHtmlVersion = useSaveHtmlVersion(templateId);
 
   const [content, setContent] = React.useState('');
   const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
@@ -26,19 +26,27 @@ export default function TemplateEditorPage() {
   const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
 
   React.useEffect(() => {
-    // Basic setup: if there's a draft or published version, load its HTML if available
-    // Currently, our versions might be DOCX only. If they are DOCX, we would ideally fetch the HTML rendition.
-    // For now, if the version is HTML, we load it. Otherwise start empty.
     if (template?.versions && template.versions.length > 0) {
-      const activeOrDraft = template.versions.find(v => v.status === 'DRAFT' || v.status === 'PUBLISHED');
-      if (activeOrDraft && activeOrDraft.contentType === 'html') {
-        // Ideally we fetch the actual content from activeOrDraft.storageUri if it was accessible
-        // Stubbing as empty since we don't have a direct HTML content field in the DTO yet
-        // In a real scenario we'd do a fetch(storageUri)
-        setContent('<p>Loaded existing HTML content...</p>');
+      // Find latest version with contentType === 'html'
+      const htmlVersions = template.versions.filter((v: any) => v.contentType === 'html');
+      const latestHtml = [...htmlVersions].sort((a: any, b: any) => b.versionNumber - a.versionNumber)[0];
+      if (latestHtml?.content) {
+        setContent(latestHtml.content);
+      } else {
+        // No HTML version yet (e.g. imported DOCX template) — fetch converted HTML from backend
+        api.get(`/templates/${templateId}/content`)
+          .then((res) => {
+            const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
+            if (payload?.content) {
+              setContent(payload.content);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to load initial template content:', err);
+          });
       }
     }
-  }, [template]);
+  }, [template, templateId]);
 
   if (isLoading) {
     return (
@@ -54,21 +62,28 @@ export default function TemplateEditorPage() {
   }
 
   const handleSave = async () => {
+    if (!content || !content.trim() || content === '<p></p>') {
+      toast.error('Template content cannot be empty.');
+      return;
+    }
     try {
-      const htmlBlob = new Blob([content], { type: 'text/html' });
-      const file = new File([htmlBlob], 'template.html', { type: 'text/html' });
-      await uploadVersion.mutateAsync({
-        file,
+      const res = await saveHtmlVersion.mutateAsync({
+        content,
         notes: 'Updated via Browser Editor',
       });
-      toast.success('Template version saved successfully!');
+      toast.success(`Template version v${res.versionNumber} saved successfully!`);
       router.push(`/documents/templates/${templateId}`);
-    } catch (error) {
-      toast.error('Failed to save template version.');
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || error?.message || 'Failed to save template version.';
+      toast.error(msg);
     }
   };
 
-  const handlePreviewRefresh = async (mode: 'SAMPLE' | 'LIVE', format: 'HTML' | 'PDF') => {
+  const handlePreviewRefresh = async (
+    mode: 'SAMPLE' | 'LIVE',
+    format: 'HTML' | 'PDF',
+    employeeId?: string,
+  ) => {
     setIsPreviewLoading(true);
     try {
       const htmlBlob = new Blob([content], { type: 'text/html' });
@@ -79,19 +94,26 @@ export default function TemplateEditorPage() {
       formData.append('mode', mode);
       formData.append('format', format);
       formData.append('contentType', 'html');
+      if (employeeId) formData.append('employeeId', employeeId);
 
       const response = await api.post('/templates/preview', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        responseType: format === 'PDF' ? 'blob' : 'json'
+        responseType: format === 'PDF' ? 'blob' : 'json',
       });
-      
+
       if (format === 'PDF') {
         const headers = response.headers;
+        const pdfBlob = response.data instanceof Blob 
+          ? response.data 
+          : new Blob([response.data], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
         const reader = new FileReader();
-        reader.readAsDataURL(response.data);
+        reader.readAsDataURL(pdfBlob);
         reader.onloadend = () => {
           const base64data = reader.result?.toString().split(',')[1];
           setPreviewData({
+            blobUrl,
             contentBase64: base64data,
             mimeType: 'application/pdf',
             errors: JSON.parse(headers['x-validation-errors'] || '[]'),
@@ -102,45 +124,54 @@ export default function TemplateEditorPage() {
           if (!isPreviewOpen) setIsPreviewOpen(true);
         };
       } else {
+        const resData = response.data?.data?.data ?? response.data?.data ?? response.data;
         setPreviewData({
-          contentBase64: Buffer.from(response.data.data.html || '').toString('base64'),
+          html: resData?.html || '',
+          contentBase64: Buffer.from(resData?.html || '').toString('base64'),
           mimeType: 'text/html',
-          errors: response.data.data.errors,
-          warnings: response.data.data.warnings,
-          resolvedKeys: response.data.data.resolvedKeys,
-          unresolvedKeys: response.data.data.unresolvedKeys,
+          errors: resData?.errors || [],
+          warnings: resData?.warnings || [],
+          resolvedKeys: resData?.resolvedKeys || [],
+          unresolvedKeys: resData?.unresolvedKeys || [],
         });
         if (!isPreviewOpen) setIsPreviewOpen(true);
       }
-    } catch (error) {
-      toast.error('Failed to prepare preview.');
+    } catch (error: any) {
+      toast.error('Failed to prepare preview: ' + (error?.response?.data?.message || error?.message));
     } finally {
       setIsPreviewLoading(false);
     }
   };
 
   const handlePreview = () => {
+    setIsPreviewOpen(true);
     handlePreviewRefresh('SAMPLE', 'HTML');
   };
 
   return (
     <div className="space-y-4 max-w-[1400px] mx-auto h-full flex flex-col">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push(`/documents/templates/${templateId}`)}>
-            <ChevronLeft className="h-5 w-5" />
+        <div className="flex items-center space-x-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => router.push(`/documents/templates/${templateId}`)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Template</span>
           </Button>
           <div>
             <h2 className="text-xl font-bold tracking-tight">Editing: {template.name}</h2>
-            <p className="text-sm text-muted-foreground font-mono">Browser Editor Mode</p>
+            <p className="text-xs text-muted-foreground font-mono">Browser Editor Mode</p>
           </div>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" onClick={handlePreview}>
             <Eye className="mr-2 h-4 w-4" /> Preview
           </Button>
-          <Button size="sm" onClick={handleSave} disabled={uploadVersion.isPending}>
-            <Save className="mr-2 h-4 w-4" /> {uploadVersion.isPending ? 'Saving...' : 'Save Version'}
+          <Button size="sm" onClick={handleSave} disabled={saveHtmlVersion.isPending}>
+            <Save className="mr-2 h-4 w-4" /> {saveHtmlVersion.isPending ? 'Saving...' : 'Save Version'}
           </Button>
         </div>
       </div>

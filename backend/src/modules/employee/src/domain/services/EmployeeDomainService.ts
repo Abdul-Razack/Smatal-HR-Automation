@@ -27,9 +27,13 @@ export class EmployeeDomainService {
   }
 
   assertCanBeTerminated(employee: EmployeeAggregate): void {
-    const nonTerminableStatuses = [EmployeeStatus.TERMINATED, EmployeeStatus.RESIGNED, EmployeeStatus.RETIRED];
+    const nonTerminableStatuses = [EmployeeStatus.TERMINATED, EmployeeStatus.RESIGNED, EmployeeStatus.RETIRED, EmployeeStatus.RELIEVED];
     if (nonTerminableStatuses.includes(employee.status)) {
       throw new InvalidEmployeeStatusTransitionException(employee.status, EmployeeStatus.TERMINATED);
     }
+  }
+
+  assertCanTransitionLifecycle(employee: EmployeeAggregate, targetStatus: EmployeeStatus): void {
+    this.assertNotDeleted(employee);
   }
 }

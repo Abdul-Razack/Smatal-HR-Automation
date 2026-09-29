@@ -30,6 +30,12 @@ enum CandidateStatus {
 }
 
 enum EmployeeStatus {
+  OFFER
+  JOINED
+  PROBATION
+  CONFIRMED
+  NOTICE_PERIOD
+  RELIEVED
   ONBOARDING
   ACTIVE
   NOTICE
@@ -167,6 +173,27 @@ enum HolidayType {
   OPTIONAL
 }
 
+enum ResignationStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  ACCEPTED
+  WITHDRAWN
+  COMPLETED
+}
+
+enum ClearanceDepartment {
+  HR
+  FINANCE
+  IT
+  ADMINISTRATION
+}
+
+enum ClearanceStatus {
+  PENDING
+  CLEARED
+  NOT_APPLICABLE
+}
+
 // ============================================================
 // BASE AUDIT FIELDS — embedded via @@map + inline fields
 // ============================================================
@@ -181,9 +208,15 @@ model Company {
   name       String    @db.VarChar(255)
   legalName  String?   @db.VarChar(255)
   code       String    @unique @db.VarChar(50)
-  logoUrl    String?   @db.VarChar(500)
-  website    String?   @db.VarChar(255)
-  industry   String?   @db.VarChar(100)
+  logoUrl                      String?   @db.VarChar(500)
+  website                      String?   @db.VarChar(255)
+  address                      String?   @db.VarChar(500)
+  phone                        String?   @db.VarChar(50)
+  email                        String?   @db.VarChar(255)
+  authorizedPerson             String?   @db.VarChar(255)
+  authorizedPersonDesignation  String?   @db.VarChar(255)
+  signatureUrl                 String?   @db.VarChar(500)
+  industry                     String?   @db.VarChar(100)
   isActive   Boolean   @default(true)
   isDeleted  Boolean   @default(false)
   deletedAt  DateTime?
@@ -215,6 +248,8 @@ model Company {
   LeaveBalance      LeaveBalance[]
   Holiday           Holiday[]
   LeaveRequest      LeaveRequest[]
+  resignations      Resignation[]
+  clearances        ExitClearance[]
 
   @@index([code])
   @@index([isDeleted])
@@ -324,6 +359,7 @@ model Profile {
   gender        String?   @db.VarChar(20)
   nationality   String?   @db.VarChar(100)
   profilePhoto  String?   @db.VarChar(500)
+  address       String?   @db.VarChar(500)
   isDeleted     Boolean   @default(false)
   deletedAt     DateTime?
   deletedBy     String?   @db.Uuid
@@ -498,19 +534,26 @@ model Employee {
   designationId    String?        @db.Uuid
   reportsToId      String?        @db.Uuid
   employeeNumber   String?        @db.VarChar(50)
+  employmentType   String?        @db.VarChar(50)
+  salary           Decimal?       @db.Decimal(12, 2)
   status           EmployeeStatus @default(ONBOARDING)
   joinedDate       DateTime       @db.Date
-  confirmationDate DateTime?      @db.Date
   probationEndDate DateTime?      @db.Date
-  terminationDate  DateTime?      @db.Date
-  isDeleted        Boolean        @default(false)
-  deletedAt        DateTime?
-  deletedBy        String?        @db.Uuid
-  version          Int            @default(1)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  createdBy        String         @db.Uuid
-  updatedBy        String         @db.Uuid
+  confirmationDate DateTime?      @db.Date
+  resignationDate   DateTime?          @db.Date
+  lastWorkingDate   DateTime?          @db.Date
+  noticePeriodDays  Int?
+  terminationDate   DateTime?          @db.Date
+  resignationReason String?            @db.VarChar(1000)
+  resignationStatus ResignationStatus? @default(NOT_SUBMITTED)
+  isDeleted         Boolean            @default(false)
+  deletedAt         DateTime?
+  deletedBy         String?            @db.Uuid
+  version           Int                @default(1)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  createdBy         String             @db.Uuid
+  updatedBy         String             @db.Uuid
 
   profile           Profile             @relation(fields: [profileId], references: [id], onDelete: Restrict)
   company           Company             @relation(fields: [companyId], references: [id], onDelete: Restrict)
@@ -525,6 +568,8 @@ model Employee {
   LeaveBalance      LeaveBalance[]
   LeaveRequest      LeaveRequest[]
   employmentHistory EmploymentHistory[]
+  resignations      Resignation[]
+  clearances        ExitClearance[]
 
   @@unique([companyId, employeeNumber])
   @@index([profileId])
@@ -557,6 +602,60 @@ model EmploymentHistory {
   @@index([companyId])
   @@index([changeType])
   @@map("employment_history")
+}
+
+model Resignation {
+  id               String            @id @default(uuid()) @db.Uuid
+  employeeId       String            @db.Uuid
+  companyId        String            @db.Uuid
+  resignationDate  DateTime          @db.Date
+  lastWorkingDate  DateTime          @db.Date
+  noticePeriodDays Int
+  reason           String            @db.VarChar(1000)
+  status           ResignationStatus @default(SUBMITTED)
+  acceptedBy       String?           @db.Uuid
+  acceptedAt       DateTime?
+  comments         String?           @db.VarChar(1000)
+  isDeleted        Boolean           @default(false)
+  deletedAt        DateTime?
+  deletedBy        String?           @db.Uuid
+  version          Int               @default(1)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  createdBy        String            @db.Uuid
+  updatedBy        String            @db.Uuid
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@index([employeeId])
+  @@index([companyId])
+  @@index([status])
+  @@map("resignations")
+}
+
+model ExitClearance {
+  id         String              @id @default(uuid()) @db.Uuid
+  employeeId String              @db.Uuid
+  companyId  String              @db.Uuid
+  department ClearanceDepartment
+  status     ClearanceStatus     @default(PENDING)
+  remarks    String?             @db.VarChar(1000)
+  clearedBy  String?             @db.Uuid
+  clearedAt  DateTime?
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+  createdBy  String              @db.Uuid
+  updatedBy  String              @db.Uuid
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  company  Company  @relation(fields: [companyId], references: [id], onDelete: Restrict)
+
+  @@unique([employeeId, department])
+  @@index([employeeId])
+  @@index([companyId])
+  @@index([status])
+  @@map("exit_clearances")
 }
 
 // ============================================================
@@ -959,6 +1058,8 @@ model GeneratedDocument {
 
   @@index([companyId])
   @@index([profileId])
+  @@index([employeeId])
+  @@index([companyId, createdAt])
   @@index([documentTypeId])
   @@index([templateVersionId])
   @@index([workflowInstanceId])

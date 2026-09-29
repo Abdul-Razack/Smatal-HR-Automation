@@ -13,9 +13,20 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCircle, CheckCircle2, FileType, FileCode2 } from 'lucide-react';
 // Removed unused Alert import
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useEmployee } from '@/modules/employee/hooks/useEmployee';
+
 interface PreviewResponseDto {
-  contentBase64: string;
-  mimeType: string;
+  html?: string;
+  contentBase64?: string;
+  mimeType?: string;
+  blobUrl?: string;
   resolvedKeys: string[];
   unresolvedKeys: string[];
   errors: string[];
@@ -27,7 +38,7 @@ interface PreviewTemplateModalProps {
   onOpenChange: (open: boolean) => void;
   previewData: PreviewResponseDto | null;
   isLoading: boolean;
-  onRefresh: (mode: 'SAMPLE' | 'LIVE', format: 'HTML' | 'PDF') => void;
+  onRefresh: (mode: 'SAMPLE' | 'LIVE', format: 'HTML' | 'PDF', employeeId?: string) => void;
 }
 
 export function PreviewTemplateModal({
@@ -39,44 +50,130 @@ export function PreviewTemplateModal({
 }: PreviewTemplateModalProps) {
   const [mode, setMode] = React.useState<'SAMPLE' | 'LIVE'>('SAMPLE');
   const [format, setFormat] = React.useState<'HTML' | 'PDF'>('HTML');
+  const [selectedEmployeeId, setSelectedEmployeeId] = React.useState<string>('');
+
+  const { useEmployees } = useEmployee();
+  const { data: employeesData } = useEmployees({ limit: 100 });
+  const employees: any[] = Array.isArray(employeesData) ? employeesData : [];
+
+  // Default to first employee when switching to LIVE mode
+  React.useEffect(() => {
+    if (mode === 'LIVE' && !selectedEmployeeId && employees.length > 0) {
+      setSelectedEmployeeId(employees[0].id);
+    }
+  }, [mode, selectedEmployeeId, employees]);
 
   React.useEffect(() => {
     if (open && !previewData && !isLoading) {
-      onRefresh(mode, format);
+      onRefresh(mode, format, mode === 'LIVE' ? selectedEmployeeId : undefined);
     }
-  }, [open, mode, format, previewData, isLoading, onRefresh]);
+  }, [open, mode, format, selectedEmployeeId, previewData, isLoading, onRefresh]);
 
   const handleRefresh = () => {
-    onRefresh(mode, format);
+    onRefresh(mode, format, mode === 'LIVE' ? selectedEmployeeId : undefined);
   };
+
+  const handleModeChange = (newMode: 'SAMPLE' | 'LIVE') => {
+    setMode(newMode);
+    const empId = newMode === 'LIVE' ? (selectedEmployeeId || employees[0]?.id) : undefined;
+    if (newMode === 'LIVE' && !selectedEmployeeId && employees[0]?.id) {
+      setSelectedEmployeeId(employees[0].id);
+    }
+    onRefresh(newMode, format, empId);
+  };
+
+  const handleEmployeeChange = (empId: string) => {
+    setSelectedEmployeeId(empId);
+    onRefresh(mode, format, empId);
+  };
+
+  const handleFormatChange = (newFormat: 'HTML' | 'PDF') => {
+    setFormat(newFormat);
+    onRefresh(mode, newFormat, mode === 'LIVE' ? selectedEmployeeId : undefined);
+  };
+
+  const previewHtml =
+    previewData?.html ||
+    (previewData?.contentBase64 && previewData?.mimeType !== 'application/pdf'
+      ? Buffer.from(previewData.contentBase64, 'base64').toString('utf-8')
+      : '');
+
+  const pdfBlobUrl = React.useMemo(() => {
+    if (previewData?.blobUrl) {
+      return previewData.blobUrl;
+    }
+    if (previewData?.mimeType === 'application/pdf' && previewData?.contentBase64) {
+      try {
+        const byteCharacters = atob(previewData.contentBase64);
+        const byteNumbers = new Uint8Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const blob = new Blob([byteNumbers], { type: 'application/pdf' });
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        console.error('Error creating PDF blob URL', e);
+        return null;
+      }
+    }
+    return null;
+  }, [previewData?.blobUrl, previewData?.contentBase64, previewData?.mimeType]);
+
+  React.useEffect(() => {
+    return () => {
+      if (pdfBlobUrl) {
+        URL.revokeObjectURL(pdfBlobUrl);
+      }
+    };
+  }, [pdfBlobUrl]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between">
+        <DialogHeader className="flex flex-row items-center justify-between pr-8">
           <DialogTitle>Template Preview</DialogTitle>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-3 items-center flex-wrap">
             <div className="flex items-center space-x-2 bg-muted p-1 rounded-md">
               <Button
                 variant={mode === 'SAMPLE' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setMode('SAMPLE')}
+                onClick={() => handleModeChange('SAMPLE')}
               >
                 Sample Data
               </Button>
               <Button
                 variant={mode === 'LIVE' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setMode('LIVE')}
+                onClick={() => handleModeChange('LIVE')}
               >
                 Live Data
               </Button>
             </div>
+
+            {mode === 'LIVE' && employees.length > 0 && (
+              <div className="w-48">
+                <Select value={selectedEmployeeId} onValueChange={handleEmployeeChange}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="Select employee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id} className="text-xs">
+                        {emp.profile?.firstName
+                          ? `${emp.profile.firstName} ${emp.profile.lastName || ''}`.trim()
+                          : emp.businessId || emp.id}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="flex items-center space-x-2 bg-muted p-1 rounded-md">
               <Button
                 variant={format === 'HTML' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setFormat('HTML')}
+                onClick={() => handleFormatChange('HTML')}
               >
                 <FileCode2 className="w-4 h-4 mr-2" />
                 HTML
@@ -84,13 +181,13 @@ export function PreviewTemplateModal({
               <Button
                 variant={format === 'PDF' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setFormat('PDF')}
+                onClick={() => handleFormatChange('PDF')}
               >
                 <FileType className="w-4 h-4 mr-2" />
                 PDF
               </Button>
             </div>
-            <Button onClick={handleRefresh} disabled={isLoading} variant="secondary">
+            <Button onClick={handleRefresh} disabled={isLoading} variant="secondary" size="sm">
               {isLoading ? 'Loading...' : 'Refresh'}
             </Button>
           </div>
@@ -105,16 +202,17 @@ export function PreviewTemplateModal({
               </div>
             )}
             
-            {previewData?.mimeType === 'text/html' ? (
-              <div 
-                className="w-full h-full p-8 overflow-auto prose max-w-none"
-                dangerouslySetInnerHTML={{
-                  __html: Buffer.from(previewData.contentBase64, 'base64').toString('utf-8')
-                }}
-              />
-            ) : previewData?.mimeType === 'application/pdf' ? (
+            {format === 'HTML' && (previewData?.mimeType === 'text/html' || (!previewData?.mimeType && previewHtml)) ? (
               <iframe
-                src={`data:application/pdf;base64,${previewData.contentBase64}`}
+                title="Template HTML Preview"
+                srcDoc={previewHtml}
+                className="w-full h-full border-0 bg-white"
+                sandbox="allow-same-origin"
+              />
+            ) : format === 'PDF' && (pdfBlobUrl || previewData?.contentBase64) ? (
+              <iframe
+                title="Template PDF Preview"
+                src={pdfBlobUrl || `data:application/pdf;base64,${previewData?.contentBase64}`}
                 className="w-full h-full border-0"
               />
             ) : (

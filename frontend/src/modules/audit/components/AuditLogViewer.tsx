@@ -87,7 +87,7 @@ export function AuditLogViewer() {
 
       <DataTable
         columns={columns}
-        data={data?.items || []}
+        data={Array.isArray(data) ? data : (data?.items || [])}
         isLoading={isLoading}
         searchKey="entityBusinessId"
       />

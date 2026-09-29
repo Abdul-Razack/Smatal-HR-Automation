@@ -16,7 +16,18 @@ export class HtmlConverterService {
   public async convertDocxToHtml(buffer: Buffer): Promise<HtmlConversionResult> {
     try {
       // Mammoth supports extracting raw HTML from the DOCX structure
-      const result = await mammoth.convertToHtml({ buffer });
+      const result = await mammoth.convertToHtml(
+        { buffer },
+        {
+          convertImage: mammoth.images.imgElement((image) => {
+            return image.read('base64').then((imageBuffer) => {
+              return {
+                src: `data:${image.contentType};base64,${imageBuffer}`,
+              };
+            });
+          }),
+        },
+      );
       
       if (result.messages && result.messages.length > 0) {
         this.logger.warn(`Mammoth conversion warnings: ${JSON.stringify(result.messages)}`);

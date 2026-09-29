@@ -7,7 +7,6 @@ import { CreateFieldDefinitionHandler } from './src/application/commands/CreateF
 import { CreateFieldGroupHandler } from './src/application/commands/CreateFieldGroup/CreateFieldGroupHandler';
 import { CreateDocumentTypeHandler } from './src/application/commands/CreateDocumentType/CreateDocumentTypeHandler';
 import { FieldRegistryController } from './src/presentation/controllers/FieldRegistryController';
-import { DocumentTypeController } from './src/presentation/controllers/DocumentTypeController';
 
 // Runtime
 import { FieldRuntimeService } from './src/runtime/FieldRuntimeService';
@@ -38,7 +37,7 @@ const Repositories = [
 
 @Module({
   imports: [CqrsModule],
-  controllers: [FieldRegistryController, DocumentTypeController],
+  controllers: [FieldRegistryController],
   providers: [
     ...CommandHandlers,
     ...Repositories,

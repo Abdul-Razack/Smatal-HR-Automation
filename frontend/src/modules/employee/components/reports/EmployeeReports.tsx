@@ -4,8 +4,6 @@ import * as React from 'react';
 import { useAnalytics } from '@/modules/analytics/hooks/useAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
 
 export function EmployeeReports() {
   const [reportType, setReportType] = React.useState<string>('HEADCOUNT');
@@ -17,11 +15,8 @@ export function EmployeeReports() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold tracking-tight">Employee Reports</h2>
-          <p className="text-muted-foreground">View and export employee analytics</p>
+          <p className="text-muted-foreground">View basic employee summary reports</p>
         </div>
-        <Button variant="outline" disabled>
-          <Download className="mr-2 h-4 w-4" /> Export CSV
-        </Button>
       </div>
 
       <Card>

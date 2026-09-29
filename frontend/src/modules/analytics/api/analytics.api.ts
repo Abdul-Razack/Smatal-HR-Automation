@@ -4,7 +4,12 @@ import { DashboardMetrics, SearchResult, ReportData } from '../types';
 export const analyticsApi = {
   getDashboard: async (type: 'HR' | 'ORG' | 'DOC' | 'ATS'): Promise<DashboardMetrics> => {
     const response = await apiClient.get('/analytics/dashboard', { params: { type } });
-    return response.data;
+    return response.data?.data || response.data;
+  },
+
+  getDashboardSummary: async (): Promise<DashboardMetrics> => {
+    const response = await apiClient.get('/dashboard/summary');
+    return response.data?.data || response.data;
   },
 
   globalSearch: async (query: string, limit?: number): Promise<SearchResult[]> => {

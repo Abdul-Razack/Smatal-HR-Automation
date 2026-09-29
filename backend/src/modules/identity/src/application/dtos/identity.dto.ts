@@ -143,6 +143,12 @@ export class UserResponseDto {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiPropertyOptional({ type: [String] })
+  roles?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  permissions?: string[];
 }
 
 export class AuthResponseDto {

@@ -1,28 +1,52 @@
-import { Controller, Get, Headers, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  UseGuards,
+  Request,
+  BadRequestException,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { QueryBus } from '@nestjs/cqrs';
+import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
 import { GetDashboardQuery } from '../../application/queries/GetDashboard/GetDashboardQuery';
 import { GlobalSearchQuery } from '../../application/queries/GlobalSearch/GlobalSearchQuery';
 import { GetReportQuery } from '../../application/queries/GetReport/GetReportQuery';
 
+@ApiTags('Analytics')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('analytics')
 export class AnalyticsController {
   constructor(private readonly queryBus: QueryBus) {}
 
   @Get('dashboard')
+  @ApiOperation({ summary: 'Get analytics dashboard for authenticated tenant' })
   async getDashboard(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query('type') type: 'HR' | 'ORG' | 'DOC' | 'ATS',
   ) {
     const result = await this.queryBus.execute(
-      new GetDashboardQuery(companyId, type || 'HR'),
+      new GetDashboardQuery(req.user.companyId, type || 'HR'),
     );
-    if (result.isFailure) throw new Error(result.errorValue);
+    if (result.isFailure) throw new BadRequestException(result.errorValue);
+    return result.getValue();
+  }
+
+  @Get('summary')
+  @ApiOperation({ summary: 'Get HR dashboard summary for authenticated tenant' })
+  async getSummary(@Request() req: any) {
+    const result = await this.queryBus.execute(
+      new GetDashboardQuery(req.user.companyId, 'HR'),
+    );
+    if (result.isFailure) throw new BadRequestException(result.errorValue);
     return result.getValue();
   }
 
   @Get('search')
+  @ApiOperation({ summary: 'Global tenant-isolated search' })
   async globalSearch(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query('q') query: string,
     @Query('limit') limit?: number,
   ) {
@@ -30,31 +54,31 @@ export class AnalyticsController {
 
     const result = await this.queryBus.execute(
       new GlobalSearchQuery(
-        companyId,
+        req.user.companyId,
         query,
         limit ? Number(limit) : undefined,
       ),
     );
 
-    if (result.isFailure) throw new Error(result.errorValue);
+    if (result.isFailure) throw new BadRequestException(result.errorValue);
     return result.getValue();
   }
 
   @Get('report')
+  @ApiOperation({ summary: 'Get tenant reports' })
   async getReport(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query('type') reportType: string,
     @Query() filters: any,
   ) {
     // Remove predefined query params from filters
     const { type, ...actualFilters } = filters;
     const result = await this.queryBus.execute(
-      new GetReportQuery(companyId, reportType, actualFilters),
+      new GetReportQuery(req.user.companyId, reportType, actualFilters),
     );
 
     if (result.isFailure) {
       console.error('AnalyticsController getReport Error:', result.errorValue);
-      const { BadRequestException } = require('@nestjs/common');
       throw new BadRequestException(
         typeof result.errorValue === 'string'
           ? result.errorValue

@@ -15,7 +15,13 @@ export function PermissionGuard({ permissions, children, fallback = <Unauthorize
   const userPermissions = usePermissions();
   
   const hasPermission = React.useMemo(() => {
-    return permissions.every((p) => userPermissions.includes(p));
+    if (!userPermissions || userPermissions.length === 0) return false;
+    if (userPermissions.includes('*') || userPermissions.includes('ALL')) return true;
+    return permissions.every((p) => {
+      if (userPermissions.includes(p)) return true;
+      const normalized = p.replace(':view', ':read');
+      return userPermissions.includes(normalized);
+    });
   }, [permissions, userPermissions]);
 
   if (!userPermissions) {

@@ -66,6 +66,28 @@ export function useUploadTemplateVersion(templateId: string) {
   });
 }
 
+export function useSaveHtmlVersion(templateId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ content, notes }: { content: string; notes?: string }) =>
+      DocumentApiService.saveHtmlTemplateVersion(templateId, { content, notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentKeys.templateDetail(templateId) });
+    },
+  });
+}
+
+export function usePreviewTemplate(templateId: string) {
+  return useMutation({
+    mutationFn: (data: {
+      mode: 'SAMPLE' | 'LIVE';
+      format?: 'HTML' | 'PDF';
+      employeeId?: string;
+      candidateId?: string;
+    }) => DocumentApiService.previewTemplate(templateId, data),
+  });
+}
+
 export function usePublishVersion(templateId: string) {
   const queryClient = useQueryClient();
   return useMutation({

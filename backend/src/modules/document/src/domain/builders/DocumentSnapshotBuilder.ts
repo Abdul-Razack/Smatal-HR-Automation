@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { DocumentSnapshotVO } from '../value-objects/DocumentSnapshotVO';
 import { StorageUploadResult } from '../../../../../infrastructure/storage/IStorageService';
 
 export interface SnapshotBuilderParams {
+  id?: string;
   documentId: string;
   storageResult: StorageUploadResult;
   mimeType: string;
@@ -16,6 +18,7 @@ export interface SnapshotBuilderParams {
 export class DocumentSnapshotBuilder {
   buildSnapshot(params: SnapshotBuilderParams): DocumentSnapshotVO {
     return DocumentSnapshotVO.create({
+      id: params.id || randomUUID(),
       generatedDocumentId: params.documentId,
       filePath: params.filePath,
       fileUrl: params.storageResult.uri,

@@ -1,9 +1,9 @@
-import { Mapper } from '@smatal/kernel/mapping/mapping.contracts';
+import { Mapper } from '../../../../../kernel/mapping/mapping.contracts';
 import { CompanyAggregate } from '../../domain/entities/CompanyAggregate';
 import { BranchEntity } from '../../domain/entities/BranchEntity';
 import { DepartmentEntity } from '../../domain/entities/DepartmentEntity';
 import { DesignationEntity } from '../../domain/entities/DesignationEntity';
-import { Identifier } from '@smatal/kernel/domain/Identifier';
+import { Identifier } from '../../../../../kernel/domain/Identifier';
 
 export class CompanyMapper implements Mapper<CompanyAggregate, any, any> {
   toDomain(raw: any): CompanyAggregate {
@@ -11,8 +11,16 @@ export class CompanyMapper implements Mapper<CompanyAggregate, any, any> {
       {
         businessId: raw.businessId,
         name: raw.name,
+        legalName: raw.legalName,
         code: raw.code,
         website: raw.website,
+        address: raw.address,
+        phone: raw.phone,
+        email: raw.email,
+        logoUrl: raw.logoUrl,
+        authorizedPerson: raw.authorizedPerson,
+        authorizedPersonDesignation: raw.authorizedPersonDesignation,
+        signatureUrl: raw.signatureUrl,
         industry: raw.industry,
         registrationNumber: raw.registrationNumber,
         taxNumber: raw.taxNumber,
@@ -28,15 +36,40 @@ export class CompanyMapper implements Mapper<CompanyAggregate, any, any> {
     );
   }
   toDTO(entity: CompanyAggregate): any {
-    throw new Error('Not implemented');
+    return {
+      id: entity.id.toString(),
+      businessId: entity.businessId,
+      name: entity.name,
+      legalName: entity.legalName,
+      code: entity.code,
+      website: entity.website,
+      address: entity.address,
+      phone: entity.phone,
+      email: entity.email,
+      logoUrl: entity.logoUrl,
+      authorizedPerson: entity.authorizedPerson,
+      authorizedPersonDesignation: entity.authorizedPersonDesignation,
+      signatureUrl: entity.signatureUrl,
+      industry: entity.industry,
+      isActive: entity.isActive,
+      updatedAt: entity.updatedAt,
+    };
   }
   toPersistence(entity: CompanyAggregate): any {
     return {
       id: entity.id.toString(),
       businessId: entity.businessId,
       name: entity.name,
+      legalName: entity.legalName,
       code: entity.code,
       website: entity.website,
+      address: entity.address,
+      phone: entity.phone,
+      email: entity.email,
+      logoUrl: entity.logoUrl,
+      authorizedPerson: entity.authorizedPerson,
+      authorizedPersonDesignation: entity.authorizedPersonDesignation,
+      signatureUrl: entity.signatureUrl,
       industry: entity.industry,
       registrationNumber: entity.registrationNumber,
       taxNumber: entity.taxNumber,

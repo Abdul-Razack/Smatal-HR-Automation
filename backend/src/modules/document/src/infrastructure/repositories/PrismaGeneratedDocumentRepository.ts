@@ -1,8 +1,29 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../../../infrastructure/database/prisma.service';
-import { IGeneratedDocumentRepository } from '../../domain/repositories/IGeneratedDocumentRepository';
+import {
+  IGeneratedDocumentRepository,
+  GeneratedDocumentFilters,
+} from '../../domain/repositories/IGeneratedDocumentRepository';
 import { GeneratedDocumentAggregate } from '../../domain/aggregates/GeneratedDocumentAggregate';
 import { GeneratedDocumentMapper } from '../mappers/GeneratedDocumentMapper';
+
+const includeRelations = {
+  snapshots: true,
+  documentType: true,
+  templateVersion: {
+    include: {
+      template: true,
+    },
+  },
+  profile: true,
+  Employee: {
+    include: {
+      profile: true,
+    },
+  },
+  company: true,
+};
 
 @Injectable()
 export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepository {
@@ -14,7 +35,7 @@ export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepo
   async findById(id: string): Promise<GeneratedDocumentAggregate | null> {
     const record = await this.prisma.generatedDocument.findUnique({
       where: { id },
-      include: { snapshots: true },
+      include: includeRelations,
     });
     if (!record) return null;
     return this.mapper.toDomain(record);
@@ -25,7 +46,7 @@ export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepo
   ): Promise<GeneratedDocumentAggregate | null> {
     const record = await this.prisma.generatedDocument.findUnique({
       where: { businessId },
-      include: { snapshots: true },
+      include: includeRelations,
     });
     if (!record) return null;
     return this.mapper.toDomain(record);
@@ -33,12 +54,71 @@ export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepo
 
   async findAll(
     companyId: string,
-    filters?: { profileId?: string; candidateId?: string; employeeId?: string },
+    filters?: GeneratedDocumentFilters,
   ): Promise<GeneratedDocumentAggregate[]> {
+    const where: any = { companyId, isDeleted: false };
+
+    if (filters?.employeeId) {
+      where.OR = [
+        { entityId: filters.employeeId },
+        { employeeId: filters.employeeId },
+      ];
+    } else if (filters?.candidateId) {
+      where.OR = [
+        { entityId: filters.candidateId },
+        { candidateId: filters.candidateId },
+      ];
+    } else if (filters?.profileId) {
+      where.profileId = filters.profileId;
+    }
+
+    if (filters?.documentTypeId) {
+      where.documentTypeId = filters.documentTypeId;
+    }
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.startDate || filters?.endDate) {
+      where.createdAt = {};
+      if (filters.startDate) {
+        where.createdAt.gte = filters.startDate;
+      }
+      if (filters.endDate) {
+        where.createdAt.lte = filters.endDate;
+      }
+    }
+
+    if (filters?.search && filters.search.trim()) {
+      const searchTerm = filters.search.trim();
+      const searchConditions = [
+        { businessId: { contains: searchTerm, mode: 'insensitive' } },
+        { documentType: { name: { contains: searchTerm, mode: 'insensitive' } } },
+        { Employee: { employeeNumber: { contains: searchTerm, mode: 'insensitive' } } },
+        { Employee: { profile: { firstName: { contains: searchTerm, mode: 'insensitive' } } } },
+        { Employee: { profile: { lastName: { contains: searchTerm, mode: 'insensitive' } } } },
+        { profile: { firstName: { contains: searchTerm, mode: 'insensitive' } } },
+        { profile: { lastName: { contains: searchTerm, mode: 'insensitive' } } },
+      ];
+
+      if (where.OR) {
+        where.AND = [
+          { OR: where.OR },
+          { OR: searchConditions },
+        ];
+        delete where.OR;
+      } else {
+        where.OR = searchConditions;
+      }
+    }
+
     const records = await this.prisma.generatedDocument.findMany({
-      where: { companyId, ...filters },
-      include: { snapshots: true },
+      where,
+      include: includeRelations,
       orderBy: { createdAt: 'desc' },
+      take: filters?.limit ? Math.min(filters.limit, 200) : 100,
+      skip: filters?.offset || 0,
     });
     return records.map((record) => this.mapper.toDomain(record));
   }
@@ -57,12 +137,17 @@ export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepo
       });
 
       for (const s of snapshots) {
-        if (!s.id) continue;
+        const snapshotId = s.id || randomUUID();
         const sExists = await this.prisma.documentSnapshot.findUnique({
-          where: { id: s.id },
+          where: { id: snapshotId },
         });
         if (!sExists) {
-          await this.prisma.documentSnapshot.create({ data: s });
+          await this.prisma.documentSnapshot.create({
+            data: {
+              ...s,
+              id: snapshotId,
+            },
+          });
         }
       }
     } else {
@@ -70,7 +155,12 @@ export class PrismaGeneratedDocumentRepository implements IGeneratedDocumentRepo
       await this.prisma.generatedDocument.create({
         data: {
           ...createData,
-          snapshots: { create: snapshots },
+          snapshots: {
+            create: snapshots.map((s: any) => ({
+              ...s,
+              id: s.id || randomUUID(),
+            })),
+          },
         },
       });
     }

@@ -15,6 +15,8 @@ import {
 } from '@nestjs/swagger';
 import { QueryBus, CommandBus } from '@nestjs/cqrs';
 import { JwtAuthGuard } from '../guards/JwtAuthGuard';
+import { RolesGuard } from '../guards/RolesGuard';
+import { Roles } from '../guards/roles.decorator';
 import {
   ListRolesQuery,
   GetRoleByIdQuery,
@@ -31,7 +33,7 @@ import {
 
 @ApiTags('Roles')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('roles')
 export class RoleController {
   constructor(
@@ -57,13 +59,14 @@ export class RoleController {
   }
 
   @Post()
+  @Roles('SUPER_ADMIN', 'COMPANY_ADMIN')
   @ApiOperation({ summary: 'Create custom role' })
   async createRole(@Request() req: any, @Body() dto: CreateRoleDto) {
     await this.commandBus.execute(
       new CreateRoleCommand(
         dto.name,
         dto.code,
-        dto.companyId || req.user.companyId,
+        req.user.companyId,
         req.user.userId,
         dto.description,
       ),
@@ -71,6 +74,7 @@ export class RoleController {
   }
 
   @Post('assign')
+  @Roles('SUPER_ADMIN', 'COMPANY_ADMIN')
   @ApiOperation({ summary: 'Assign role to user' })
   async assignRole(@Request() req: any, @Body() dto: AssignRoleDto) {
     await this.commandBus.execute(

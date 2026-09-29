@@ -9,16 +9,16 @@ import { FormFieldConfig } from '@/shared/types';
 import { useMaster } from '../../hooks/useMaster';
 import { useModalStore } from '@/shared/modals/useModalStore';
 
-export function DocumentTypeForm() {
+export function DocumentTypeForm({ initialData }: { initialData?: any } = {}) {
   const { createDocumentType } = useMaster();
   const closeModal = useModalStore((state) => state.closeModal);
   
   const form = useForm<DocumentTypeFormData>({
     resolver: zodResolver(documentTypeSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      description: '',
+      name: initialData?.name || '',
+      code: initialData?.code || '',
+      description: initialData?.description || '',
     },
   });
 

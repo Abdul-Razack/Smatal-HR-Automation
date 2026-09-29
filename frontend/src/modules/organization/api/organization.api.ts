@@ -1,7 +1,39 @@
 import { apiClient } from '@/api/client';
-import { Branch, Company, Department, Designation } from '../types';
+import { Branch, Company, CompanySettings, Department, Designation, UpdateCompanySettingsDto } from '../types';
 
 export const organizationApi = {
+  // Company Settings (Step 9)
+  getCompanySettings: async (): Promise<CompanySettings> => {
+    const response = await apiClient.get('/company/settings');
+    return response.data?.data || response.data;
+  },
+  updateCompanySettings: async (data: UpdateCompanySettingsDto): Promise<CompanySettings> => {
+    const response = await apiClient.patch('/company/settings', data);
+    return response.data?.data || response.data;
+  },
+  uploadLogo: async (file: File): Promise<{ url: string; path: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/company/settings/logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.data || response.data;
+  },
+  removeLogo: async (): Promise<void> => {
+    await apiClient.delete('/company/settings/logo');
+  },
+  uploadSignature: async (file: File): Promise<{ url: string; path: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/company/settings/signature', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data?.data || response.data;
+  },
+  removeSignature: async (): Promise<void> => {
+    await apiClient.delete('/company/settings/signature');
+  },
+
   // Company
   getMyCompany: async (): Promise<Company> => {
     const response = await apiClient.get('/organization/company/me');

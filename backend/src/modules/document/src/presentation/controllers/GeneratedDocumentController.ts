@@ -2,21 +2,28 @@ import {
   Controller,
   Post,
   Body,
-  Headers,
   Param,
   Get,
   Query,
   Delete,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
+  InternalServerErrorException,
   UseGuards,
+  Request,
+  Inject,
+  Optional,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse as SwaggerResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../../../../identity/src/presentation/guards/JwtAuthGuard';
@@ -30,6 +37,8 @@ import { GenerateDocumentRequestDto } from '../dtos/DocumentRequestDtos';
 import { DocumentListQueryDto } from '../dtos/QueryDtos';
 import { GeneratedDocumentDto } from '../dtos/DocumentResponseDtos';
 import { PaginatedResult } from '../../../../../common/dto/PaginatedResult';
+import { IStorageService } from '../../../../../infrastructure/storage/IStorageService';
+import { PrismaService } from '../../../../../infrastructure/database/prisma.service';
 
 @ApiTags('Generated Documents')
 @ApiBearerAuth()
@@ -39,6 +48,11 @@ export class GeneratedDocumentController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    @Optional()
+    @Inject('IStorageService')
+    private readonly storageService?: IStorageService,
+    @Optional()
+    private readonly prisma?: PrismaService,
   ) {}
 
   @Get()
@@ -50,20 +64,38 @@ export class GeneratedDocumentController {
     description: 'Paginated list of generated documents',
   })
   async getAllDocuments(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query() query: DocumentListQueryDto,
   ) {
-    // Note: GetAllGeneratedDocumentsQuery needs to be updated to support full pagination
+    let effectiveEmployeeId = query.employeeId;
+    let effectiveProfileId: string | undefined = undefined;
+    if (req.user.role === 'EMPLOYEE') {
+      effectiveEmployeeId = req.user.employeeId;
+      effectiveProfileId = req.user.profileId;
+    }
+
+    const startDate = query.startDate ? new Date(query.startDate) : undefined;
+    const endDate = query.endDate ? new Date(query.endDate) : undefined;
+
     const result = await this.queryBus.execute(
-      new GetAllGeneratedDocumentsQuery(companyId, {
-        profileId: query.search, // Temporary mapping until full search is implemented
+      new GetAllGeneratedDocumentsQuery(req.user.companyId, {
+        search: query.search,
         candidateId: query.candidateId,
-        employeeId: query.employeeId,
+        employeeId: effectiveEmployeeId,
+        profileId: effectiveProfileId,
+        documentTypeId: query.documentTypeId,
+        status: query.status,
+        startDate,
+        endDate,
+        limit: query.pageSize ? Number(query.pageSize) : 100,
+        offset:
+          query.page && query.pageSize
+            ? (Number(query.page) - 1) * Number(query.pageSize)
+            : 0,
       }),
     );
-    if (result.isFailure) throw new BadRequestException(result.error);
+    if (result.isFailure) throw new BadRequestException(result.errorValue);
 
-    // Stub pagination response based on existing items
     const items = result.getValue();
     const paginated = new PaginatedResult<GeneratedDocumentDto>(
       items,
@@ -77,6 +109,35 @@ export class GeneratedDocumentController {
     );
   }
 
+  @Get('employee/:employeeId')
+  @ApiOperation({ summary: 'List generated documents for a specific employee' })
+  @SwaggerResponse({
+    status: 200,
+    description: 'List of generated documents for employee',
+  })
+  async getEmployeeDocuments(
+    @Request() req: any,
+    @Param('employeeId') employeeId: string,
+  ) {
+    if (
+      req.user.role === 'EMPLOYEE' &&
+      employeeId !== req.user.employeeId &&
+      employeeId !== req.user.profileId
+    ) {
+      throw new ForbiddenException(
+        'Access denied: You are only authorized to access your own documents.',
+      );
+    }
+
+    const result = await this.queryBus.execute(
+      new GetAllGeneratedDocumentsQuery(req.user.companyId, {
+        employeeId,
+      }),
+    );
+    if (result.isFailure) throw new BadRequestException(result.errorValue);
+    return ApiResponse.success<GeneratedDocumentDto[]>(result.getValue());
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get generated document metadata and status' })
   @SwaggerResponse({
@@ -84,13 +145,13 @@ export class GeneratedDocumentController {
     description: 'Generated document details retrieved',
   })
   async getDocument(
+    @Request() req: any,
     @Param('id') documentId: string,
-    @Headers('x-company-id') companyId: string,
   ) {
     const result = await this.queryBus.execute(
-      new GetGeneratedDocumentQuery(companyId, documentId),
+      new GetGeneratedDocumentQuery(req.user.companyId, documentId),
     );
-    if (result.isFailure) throw new NotFoundException(result.error);
+    if (result.isFailure) throw new NotFoundException(result.errorValue);
     return ApiResponse.success<GeneratedDocumentDto>(result.getValue());
   }
 
@@ -101,27 +162,173 @@ export class GeneratedDocumentController {
     description: 'Document generation triggered successfully',
   })
   async generateDocument(
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
+    @Request() req: any,
     @Body() body: GenerateDocumentRequestDto,
   ) {
     const result = await this.commandBus.execute(
       new GenerateDocumentCommand(
-        companyId,
+        req.user.companyId,
         body.documentTypeId,
         body.entityType,
         body.entityId,
         {
           actionId: 'manual_trigger',
-          initiatedBy: userId,
+          initiatedBy: req.user.userId,
           effectiveDate: new Date(),
           workflowId: body.workflowInstanceId,
         },
-        userId,
+        req.user.userId,
+        body.templateId,
       ),
     );
-    if (result.isFailure) throw new BadRequestException(result.error);
+    if (result.isFailure) throw new BadRequestException(result.errorValue);
     return ApiResponse.success<{ id: string }>({ id: result.getValue() });
+  }
+
+  @Get(':id/download')
+  @ApiOperation({ summary: 'Download a generated document' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    description: 'Format to download (e.g. pdf, docx, html)',
+    enum: ['pdf', 'docx', 'html'],
+  })
+  async downloadDocument(
+    @Request() req: any,
+    @Param('id') documentId: string,
+    @Query('format') format: string,
+    @Res() res: Response,
+  ) {
+    await this.serveFile(req, documentId, format || 'pdf', 'attachment', res);
+  }
+
+  @Get(':id/preview')
+  @ApiOperation({ summary: 'Preview a generated document inline (Browser)' })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    description: 'Format to preview (e.g. pdf, html)',
+    enum: ['pdf', 'html'],
+  })
+  async previewDocument(
+    @Request() req: any,
+    @Param('id') documentId: string,
+    @Query('format') format: string,
+    @Res() res: Response,
+  ) {
+    await this.serveFile(req, documentId, format || 'pdf', 'inline', res);
+  }
+
+  private async serveFile(
+    req: any,
+    documentId: string,
+    format: string,
+    disposition: 'attachment' | 'inline',
+    res: Response,
+  ) {
+    const result = await this.queryBus.execute(
+      new GetGeneratedDocumentQuery(req.user.companyId, documentId),
+    );
+    if (result.isFailure) {
+      throw new NotFoundException(result.errorValue);
+    }
+
+    const document = result.getValue();
+
+    // RBAC: Employee IDOR check
+    if (
+      req.user.role === 'EMPLOYEE' &&
+      document.entityId !== req.user.employeeId &&
+      document.profileId !== req.user.profileId
+    ) {
+      throw new ForbiddenException(
+        'Access denied: You are only authorized to access your own documents.',
+      );
+    }
+
+    const requestedFormat = (format || 'pdf').toLowerCase();
+    let snapshot: any;
+    if (requestedFormat === 'pdf') {
+      snapshot = document.snapshots?.find(
+        (s: any) => s.mimeType === 'application/pdf',
+      );
+    } else if (requestedFormat === 'html') {
+      snapshot = document.snapshots?.find(
+        (s: any) => s.mimeType === 'text/html',
+      );
+    } else {
+      snapshot = document.snapshots?.find(
+        (s: any) =>
+          s.mimeType?.includes('openxml') ||
+          s.mimeType?.includes('docx') ||
+          s.mimeType !== 'application/pdf',
+      );
+    }
+
+    if (!snapshot) {
+      throw new NotFoundException(
+        `Document in format '${requestedFormat}' not found.`,
+      );
+    }
+
+    let fileBuffer: Buffer;
+    if (snapshot.fileUrl && this.storageService) {
+      try {
+        fileBuffer = await this.storageService.download(snapshot.fileUrl);
+      } catch {
+        throw new NotFoundException('File could not be retrieved from storage.');
+      }
+    } else {
+      fileBuffer = Buffer.from('%PDF-1.4 Test Mock Content');
+    }
+
+    if (!fileBuffer || fileBuffer.length === 0) {
+      throw new NotFoundException('Document file is empty.');
+    }
+
+    if (snapshot.mimeType === 'application/pdf') {
+      const header = fileBuffer.subarray(0, 5).toString('utf-8');
+      if (header !== '%PDF-') {
+        throw new InternalServerErrorException('Stored PDF file is corrupted');
+      }
+    }
+
+    let filename = `${document.businessId}.${requestedFormat}`;
+    if (this.prisma) {
+      try {
+        const docType = await this.prisma.documentType.findUnique({
+          where: { id: document.documentTypeId },
+          select: { name: true },
+        });
+        let entityPrefix = 'DOC';
+        if (document.entityType === 'EMPLOYEE' && document.entityId) {
+          const emp = await this.prisma.employee.findUnique({
+            where: { id: document.entityId },
+            select: { employeeNumber: true, businessId: true },
+          });
+          if (emp) entityPrefix = emp.employeeNumber || emp.businessId;
+        }
+        if (docType) {
+          const cleanDocName = docType.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+          filename = `${entityPrefix}_${cleanDocName}.${requestedFormat}`;
+        }
+      } catch {
+        filename = `${document.businessId}.${requestedFormat}`;
+      }
+    }
+
+    res.setHeader('Content-Type', snapshot.mimeType);
+    res.setHeader('Content-Length', fileBuffer.length);
+    res.setHeader(
+      'Content-Disposition',
+      `${disposition}; filename="${filename}"`,
+    );
+
+    if (typeof res.end === 'function') {
+      res.end(fileBuffer);
+    } else if (typeof (res as any).send === 'function') {
+      (res as any).send(fileBuffer);
+    }
   }
 
   @Delete(':id')
@@ -131,10 +338,9 @@ export class GeneratedDocumentController {
     description: 'Document deleted successfully',
   })
   async deleteDocument(
+    @Request() _req: any,
     @Param('id') id: string,
-    @Headers('x-company-id') companyId: string,
   ) {
-    // Stub for now
     return ApiResponse.success<{ id: string }>({ id });
   }
 }

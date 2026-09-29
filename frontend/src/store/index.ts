@@ -28,7 +28,7 @@ interface AuthState {
   login: (data: { accessToken: string; refreshToken: string; user: User; company?: Company; roles: string[]; permissions: string[] }) => void;
   logout: () => void;
   refresh: (accessToken: string, refreshToken: string) => void;
-  setUser: (user: User) => void;
+  setUser: (user: User, roles?: string[], permissions?: string[]) => void;
   setCompany: (company: Company) => void;
   clear: () => void;
 }
@@ -89,7 +89,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     });
   },
 
-  setUser: (user) => set({ currentUser: user, status: 'authenticated' }),
+  setUser: (user, roles, permissions) =>
+    set({
+      currentUser: user,
+      ...(roles !== undefined ? { roles } : {}),
+      ...(permissions !== undefined ? { permissions } : {}),
+      status: 'authenticated',
+    }),
   
   setCompany: (company) => {
     storage.set('company_id', company.id);

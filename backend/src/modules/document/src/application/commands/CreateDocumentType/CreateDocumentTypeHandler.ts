@@ -20,14 +20,34 @@ export class CreateDocumentTypeHandler implements ICommandHandler<CreateDocument
 
   async execute(command: CreateDocumentTypeCommand): Promise<Result<string>> {
     try {
+      if (!command.name || !command.name.trim()) {
+        return Result.fail<string>('Document type name is required.');
+      }
+
+      if (!command.code || !command.code.trim()) {
+        return Result.fail<string>('Document type code is required.');
+      }
+
+      const normalizedCode = command.code.trim().toUpperCase().replace(/\s+/g, '_');
+
+      const existing = await this.repository.findByCode(
+        command.companyId,
+        normalizedCode,
+      );
+      if (existing && !existing.isDeleted) {
+        return Result.fail<string>(
+          `Document type with code "${normalizedCode}" already exists in this company.`,
+        );
+      }
+
       const businessId = await this.idGenerator.generate('DOC');
 
       const documentType = DocumentTypeAggregate.create({
         businessId,
         companyId: command.companyId,
-        name: command.name,
-        code: command.code,
-        description: command.description,
+        name: command.name.trim(),
+        code: normalizedCode,
+        description: command.description?.trim() || null,
         isActive: true,
         isDeleted: false,
         version: 1,

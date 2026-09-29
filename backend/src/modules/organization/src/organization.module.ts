@@ -5,6 +5,8 @@ import { BusinessIdGenerator } from '../../../infrastructure/database/BusinessId
 
 // Controllers
 import { OrganizationController } from './presentation/controllers/OrganizationController';
+import { CompanySettingsController } from './presentation/controllers/CompanySettingsController';
+import { LocalStorageAdapter } from '../../../infrastructure/storage/LocalStorageAdapter';
 
 // Repositories
 import { COMPANY_REPOSITORY } from './domain/repositories/ICompanyRepository';
@@ -23,18 +25,25 @@ import {
   CreateDepartmentHandler,
   CreateDesignationHandler,
 } from './application/commands/organization.handlers';
+import { UpdateCompanySettingsHandler } from './application/commands/UpdateCompanySettingsHandler';
+import { UploadCompanyBrandingHandler } from './application/commands/UploadCompanyBrandingHandler';
+import { RemoveCompanyBrandingHandler } from './application/commands/RemoveCompanyBrandingHandler';
 import {
   GetCompanyByIdHandler,
   ListBranchesHandler,
   ListDepartmentsHandler,
   ListDesignationsHandler,
 } from './application/queries/organization.query.handlers';
+import { GetCompanySettingsHandler } from './application/queries/GetCompanySettingsHandler';
 
 const CommandHandlers = [
   CreateCompanyHandler,
   CreateBranchHandler,
   CreateDepartmentHandler,
   CreateDesignationHandler,
+  UpdateCompanySettingsHandler,
+  UploadCompanyBrandingHandler,
+  RemoveCompanyBrandingHandler,
 ];
 
 const QueryHandlers = [
@@ -42,6 +51,7 @@ const QueryHandlers = [
   ListBranchesHandler,
   ListDepartmentsHandler,
   ListDesignationsHandler,
+  GetCompanySettingsHandler,
 ];
 
 const Repositories = [
@@ -49,11 +59,12 @@ const Repositories = [
   { provide: BRANCH_REPOSITORY, useClass: PrismaBranchRepository },
   { provide: DEPARTMENT_REPOSITORY, useClass: PrismaDepartmentRepository },
   { provide: DESIGNATION_REPOSITORY, useClass: PrismaDesignationRepository },
+  { provide: 'IStorageService', useClass: LocalStorageAdapter },
 ];
 
 @Module({
   imports: [CqrsModule, IdentityModule],
-  controllers: [OrganizationController],
+  controllers: [OrganizationController, CompanySettingsController],
   providers: [
     ...CommandHandlers,
     ...QueryHandlers,

@@ -33,30 +33,6 @@ export const setupInterceptors = (apiClient: AxiosInstance) => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      if (companyId && config.headers) {
-        if (typeof companyId === 'string') {
-          config.headers['X-Company-ID'] = companyId;
-        } else if (typeof companyId === 'object' && companyId !== null && 'value' in companyId) {
-          config.headers['X-Company-ID'] = String((companyId as any).value);
-        } else {
-          config.headers['X-Company-ID'] = String(companyId);
-        }
-      }
-
-      let userId = useAuthStore.getState().currentUser?.id;
-      if (!userId && token) {
-        try {
-          const payloadBase64 = token.split('.')[1];
-          const decodedJson = atob(payloadBase64);
-          const payload = JSON.parse(decodedJson);
-          userId = payload.sub || payload.id;
-        } catch(e) {}
-      }
-
-      if (userId && config.headers) {
-        config.headers['X-User-ID'] = userId;
-      }
-
       return config;
     },
     (error: AxiosError) => Promise.reject(error)

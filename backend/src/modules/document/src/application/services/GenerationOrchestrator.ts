@@ -2,7 +2,8 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { EventBus } from '@nestjs/cqrs';
 import { DocumentGeneratorFactory } from '../../infrastructure/generators/DocumentGeneratorFactory';
 import { IStorageService } from '../../../../../infrastructure/storage/IStorageService';
-import { PdfConverterService } from '../../infrastructure/services/PdfConverterService';
+import { PdfGenerationService } from '../../infrastructure/services/PdfGenerationService';
+import { HtmlConverterService } from '../../infrastructure/services/HtmlConverterService';
 import { TemplateLoader } from '../../infrastructure/services/TemplateLoader';
 import { DocumentSnapshotBuilder } from '../../domain/builders/DocumentSnapshotBuilder';
 import { StoragePathBuilder } from '../../../../../infrastructure/storage/StoragePathBuilder';
@@ -12,6 +13,8 @@ import { TemplateVersionEntity } from '../../domain/entities/TemplateVersionEnti
 import { DocumentRenderContext } from '../../domain/models/DocumentRenderContext';
 import { GenerationValidator } from '../../domain/services/GenerationValidator';
 import { DocumentSnapshotVO } from '../../domain/value-objects/DocumentSnapshotVO';
+import { AutomaticResolverService } from '../../domain/services/AutomaticResolverService';
+import { PrismaEntityDataProvider } from '../../infrastructure/data/PrismaEntityDataProvider';
 import {
   RenderingException,
   StorageException,
@@ -25,6 +28,23 @@ import {
 import { IUnitOfWork } from '../../../../../infrastructure/database/transaction/IUnitOfWork';
 import { IGeneratedDocumentRepository } from '../../domain/repositories/IGeneratedDocumentRepository';
 
+function scanHtmlPlaceholders(html: string): string[] {
+  const regex = /\{\{([^}]+)\}\}/g;
+  const keys = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(html)) !== null) keys.add(m[1].trim());
+  return Array.from(keys);
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 @Injectable()
 export class GenerationOrchestrator {
   private readonly logger = new Logger(GenerationOrchestrator.name);
@@ -33,7 +53,10 @@ export class GenerationOrchestrator {
     private readonly validator: GenerationValidator,
     private readonly generatorFactory: DocumentGeneratorFactory,
     private readonly templateLoader: TemplateLoader,
-    private readonly pdfConverter: PdfConverterService,
+    private readonly pdfGenerationService: PdfGenerationService,
+    private readonly htmlConverter: HtmlConverterService,
+    private readonly automaticResolver: AutomaticResolverService,
+    private readonly dataProvider: PrismaEntityDataProvider,
     @Inject('IStorageService') private readonly storageService: IStorageService,
     private readonly snapshotBuilder: DocumentSnapshotBuilder,
     private readonly eventBus: EventBus,
@@ -49,6 +72,8 @@ export class GenerationOrchestrator {
     context: DocumentRenderContext,
     performedBy: string,
   ): Promise<DocumentSnapshotVO[]> {
+    const startTime = Date.now();
+
     // 1. Publish Started Event
     this.eventBus.publish(
       new DocumentGenerationStartedEvent(
@@ -62,7 +87,37 @@ export class GenerationOrchestrator {
     );
 
     try {
-      // 2. Validate
+      // 2. Resolve Placeholders using Centralized AutomaticResolverService
+      let placeholderKeys: string[] = [];
+      if (activeVersion.contentType === 'html') {
+        placeholderKeys = scanHtmlPlaceholders(activeVersion.content || '');
+      } else {
+        placeholderKeys = (activeVersion.placeholders || []).map(
+          (p) => p.placeholderKey,
+        );
+      }
+
+      if (placeholderKeys.length > 0) {
+        const resolution = await this.automaticResolver.resolvePlaceholders(
+          placeholderKeys,
+          {
+            companyId: document.companyId,
+            profileId: context.profileId || document.entityId,
+            candidateId:
+              document.entityType === 'CANDIDATE' ? document.entityId : undefined,
+            employeeId:
+              document.entityType === 'EMPLOYEE' ? document.entityId : undefined,
+          },
+          this.dataProvider,
+        );
+
+        context.placeholders = {
+          ...resolution.resolvedValues,
+          ...context.placeholders,
+        };
+      }
+
+      // 3. Pre-render Validation (Tenant match, version published, required placeholders)
       this.validator.validatePreRender(
         document,
         template,
@@ -70,108 +125,188 @@ export class GenerationOrchestrator {
         context,
       );
 
-      // 3. Load Template
-      if (!activeVersion.storageUri) {
-        throw new RenderingException('Template version has no storage URI');
-      }
-      const templateStream = await this.templateLoader.loadTemplateStream(
-        activeVersion.storageUri,
-      );
+      let primarySnapshot: DocumentSnapshotVO;
+      let pdfSnapshot: DocumentSnapshotVO;
 
-      // 4. Get Strategy and Render
-      const strategy = this.generatorFactory.getStrategy(
-        activeVersion.contentType,
-      );
-      const startTime = Date.now();
-      const renderResult = await strategy.generate(templateStream, context);
-      const renderTimeMs = Date.now() - startTime;
+      if (activeVersion.contentType === 'html') {
+        // ── HTML Pipeline ────────────────────────────────────────────────
+        let resolvedHtml = activeVersion.content || '';
+        for (const [k, v] of Object.entries(context.placeholders)) {
+          resolvedHtml = resolvedHtml.replaceAll(
+            `{{${k}}}`,
+            escapeHtml(String(v ?? '')),
+          );
+        }
 
-      this.logger.debug(`Rendered document in ${renderTimeMs}ms`);
-
-      // 5. Upload Primary Document
-      const primaryFileName = StoragePathBuilder.buildGeneratedDocumentPath(
-        document.companyId,
-        document.entityId,
-        document.businessId,
-        renderResult.extension.replace('.', ''),
-      );
-
-      let primaryStorageResult;
-      try {
-        primaryStorageResult = await this.storageService.uploadStream(
-          primaryFileName,
-          renderResult.stream,
-          renderResult.mimeType,
+        // Upload Primary HTML
+        const primaryFileName = StoragePathBuilder.buildGeneratedDocumentPath(
+          document.companyId,
+          document.entityId,
+          document.businessId,
+          'html',
         );
-      } catch (e: any) {
-        throw new StorageException(
-          `Primary document upload failed: ${e.message}`,
-        );
-      }
 
-      // 6. PDF Conversion
-      let pdfBuffer: Buffer;
-      try {
-        // We have to download the stream we just uploaded to convert it, since the original stream was consumed.
-        const uploadedBuffer = await this.storageService.download(
-          primaryStorageResult.uri,
+        let primaryStorageResult;
+        try {
+          primaryStorageResult = await this.storageService.upload(
+            primaryFileName,
+            Buffer.from(resolvedHtml, 'utf-8'),
+            'text/html',
+          );
+        } catch (e: any) {
+          throw new StorageException(
+            `Primary HTML document upload failed: ${e.message}`,
+          );
+        }
+
+        // Render genuine PDF from resolved HTML
+        let pdfBuffer: Buffer;
+        try {
+          pdfBuffer = await this.pdfGenerationService.generateFromHtml(
+            resolvedHtml,
+          );
+        } catch (e: any) {
+          throw new PdfConversionException(e.message);
+        }
+
+        // Upload PDF Document
+        const pdfFileName = StoragePathBuilder.buildGeneratedDocumentPath(
+          document.companyId,
+          document.entityId,
+          document.businessId,
+          'pdf',
         );
-        pdfBuffer = await this.pdfConverter.convertToPdf(
-          uploadedBuffer,
+
+        let pdfStorageResult;
+        try {
+          pdfStorageResult = await this.storageService.upload(
+            pdfFileName,
+            pdfBuffer,
+            'application/pdf',
+          );
+        } catch (e: any) {
+          throw new StorageException(
+            `PDF document upload failed: ${e.message}`,
+          );
+        }
+
+        primarySnapshot = this.snapshotBuilder.buildSnapshot({
+          documentId: document.id.toValue() as string,
+          storageResult: primaryStorageResult,
+          mimeType: 'text/html',
+          storageProvider: this.storageService.constructor.name,
+          performedBy,
+          filePath: primaryFileName,
+        });
+
+        pdfSnapshot = this.snapshotBuilder.buildSnapshot({
+          documentId: document.id.toValue() as string,
+          storageResult: pdfStorageResult,
+          mimeType: 'application/pdf',
+          storageProvider: this.storageService.constructor.name,
+          performedBy,
+          filePath: pdfFileName,
+        });
+      } else {
+        // ── DOCX Pipeline ────────────────────────────────────────────────
+        if (!activeVersion.storageUri) {
+          throw new RenderingException('Template version has no storage URI');
+        }
+        const templateStream = await this.templateLoader.loadTemplateStream(
+          activeVersion.storageUri,
+        );
+
+        const strategy = this.generatorFactory.getStrategy(
           activeVersion.contentType,
         );
-      } catch (e: any) {
-        throw new PdfConversionException(e.message);
-      }
+        const renderResult = await strategy.generate(templateStream, context);
 
-      // 7. Upload PDF
-      const pdfFileName = StoragePathBuilder.buildGeneratedDocumentPath(
-        document.companyId,
-        document.entityId,
-        document.businessId,
-        'pdf',
-      );
-
-      let pdfStorageResult;
-      try {
-        pdfStorageResult = await this.storageService.upload(
-          pdfFileName,
-          pdfBuffer,
-          'application/pdf',
+        // Upload Primary DOCX
+        const primaryFileName = StoragePathBuilder.buildGeneratedDocumentPath(
+          document.companyId,
+          document.entityId,
+          document.businessId,
+          renderResult.extension.replace('.', ''),
         );
-      } catch (e: any) {
-        throw new StorageException(`PDF document upload failed: ${e.message}`);
+
+        let primaryStorageResult;
+        try {
+          primaryStorageResult = await this.storageService.uploadStream(
+            primaryFileName,
+            renderResult.stream,
+            renderResult.mimeType,
+          );
+        } catch (e: any) {
+          throw new StorageException(
+            `Primary DOCX document upload failed: ${e.message}`,
+          );
+        }
+
+        // Convert DOCX -> HTML -> Genuine PDF
+        let pdfBuffer: Buffer;
+        try {
+          const docxBuffer = await this.storageService.download(
+            primaryStorageResult.uri,
+          );
+          const htmlResult = await this.htmlConverter.convertDocxToHtml(
+            docxBuffer,
+          );
+          pdfBuffer = await this.pdfGenerationService.generateFromHtml(
+            htmlResult.html,
+          );
+        } catch (e: any) {
+          throw new PdfConversionException(e.message);
+        }
+
+        // Upload PDF Document
+        const pdfFileName = StoragePathBuilder.buildGeneratedDocumentPath(
+          document.companyId,
+          document.entityId,
+          document.businessId,
+          'pdf',
+        );
+
+        let pdfStorageResult;
+        try {
+          pdfStorageResult = await this.storageService.upload(
+            pdfFileName,
+            pdfBuffer,
+            'application/pdf',
+          );
+        } catch (e: any) {
+          throw new StorageException(
+            `PDF document upload failed: ${e.message}`,
+          );
+        }
+
+        primarySnapshot = this.snapshotBuilder.buildSnapshot({
+          documentId: document.id.toValue() as string,
+          storageResult: primaryStorageResult,
+          mimeType: renderResult.mimeType,
+          storageProvider: this.storageService.constructor.name,
+          performedBy,
+          filePath: primaryFileName,
+        });
+
+        pdfSnapshot = this.snapshotBuilder.buildSnapshot({
+          documentId: document.id.toValue() as string,
+          storageResult: pdfStorageResult,
+          mimeType: 'application/pdf',
+          storageProvider: this.storageService.constructor.name,
+          performedBy,
+          filePath: pdfFileName,
+        });
       }
 
-      // 8. Build Snapshots
-      const primarySnapshot = this.snapshotBuilder.buildSnapshot({
-        documentId: document.id.toValue() as string,
-        storageResult: primaryStorageResult,
-        mimeType: renderResult.mimeType,
-        storageProvider: this.storageService.constructor.name,
-        performedBy,
-        filePath: primaryFileName,
-        renderedContent:
-          activeVersion.contentType === 'html' ? undefined : undefined, // V2 does not store rendered content in DB
-      });
-
-      const pdfSnapshot = this.snapshotBuilder.buildSnapshot({
-        documentId: document.id.toValue() as string,
-        storageResult: pdfStorageResult,
-        mimeType: 'application/pdf',
-        storageProvider: this.storageService.constructor.name,
-        performedBy,
-        filePath: pdfFileName,
-      });
-
-      // 9. Transition to GENERATED and attach snapshots
+      // 4. Transition to GENERATED and attach snapshots
+      const renderTimeMs = Date.now() - startTime;
       document.markAsGenerated(performedBy, [primarySnapshot, pdfSnapshot]);
 
       await this.unitOfWork.withTransaction(async () => {
         await this.documentRepo.save(document);
       });
 
-      // 10. Publish Completed Event
+      // 5. Publish Completed Event
       this.eventBus.publish(
         new DocumentGenerationCompletedEvent(
           document.id.toValue() as string,

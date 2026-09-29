@@ -1,5 +1,18 @@
 import { GeneratedDocumentAggregate } from '../aggregates/GeneratedDocumentAggregate';
 
+export interface GeneratedDocumentFilters {
+  profileId?: string;
+  candidateId?: string;
+  employeeId?: string;
+  documentTypeId?: string;
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+  status?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export interface IGeneratedDocumentRepository {
   findById(id: string): Promise<GeneratedDocumentAggregate | null>;
   findByBusinessId(
@@ -7,7 +20,7 @@ export interface IGeneratedDocumentRepository {
   ): Promise<GeneratedDocumentAggregate | null>;
   findAll(
     companyId: string,
-    filters?: { profileId?: string; candidateId?: string; employeeId?: string },
+    filters?: GeneratedDocumentFilters,
   ): Promise<GeneratedDocumentAggregate[]>;
   save(document: GeneratedDocumentAggregate): Promise<void>;
 }

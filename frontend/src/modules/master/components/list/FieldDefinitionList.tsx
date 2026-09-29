@@ -48,10 +48,30 @@ export function FieldDefinitionList() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              openModal({
+                id: 'edit-field-definition',
+                type: 'side-panel',
+                title: 'Edit Field Definition',
+                content: <FieldDefinitionForm initialData={row.original} />,
+              })
+            }
+            title="Edit Field"
+          >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={() =>
+              alert('Field definition deletion is restricted when template mappings or employee data are bound to this key.')
+            }
+            title="Delete Field"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

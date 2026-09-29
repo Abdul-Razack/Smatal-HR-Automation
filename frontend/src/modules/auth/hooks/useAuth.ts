@@ -12,11 +12,9 @@ export const useAuth = () => {
 
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginFormData) => {
-      console.log('--- EXECUTING LOGIN MUTATION ---');
       return authApi.login(credentials);
     },
     onSuccess: (data) => {
-      console.log('--- LOGIN SUCCESS ---', data);
       // Data usually has { accessToken, refreshToken, user, company (optional) }
       // The backend structure might differ, so we map it appropriately based on AuthResponseDto
       // For now, assuming standard structure.
@@ -31,7 +29,6 @@ export const useAuth = () => {
       router.push('/');
     },
     onError: (error: any) => {
-      console.error('--- LOGIN ERROR ---', error);
       const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
       toast.error(message);
     },
@@ -70,7 +67,10 @@ export const usePermissions = () => {
 
 export const useHasPermission = (permission: string) => {
   const permissions = usePermissions();
-  return permissions.includes(permission);
+  if (permissions.includes('*')) return true;
+  if (permissions.includes(permission)) return true;
+  const normalized = permission.replace(':view', ':read');
+  return permissions.includes(normalized);
 };
 
 export const useHasRole = (role: string) => {

@@ -19,6 +19,13 @@ export class GenerateDocumentRequestDto {
   entityId: string;
 
   @ApiPropertyOptional({
+    description: 'The specific template ID to generate from (optional, auto-routes to branch template if omitted)',
+  })
+  @IsOptional()
+  @IsString()
+  templateId?: string;
+
+  @ApiPropertyOptional({
     description: 'The workflow instance ID driving this generation',
   })
   @IsOptional()

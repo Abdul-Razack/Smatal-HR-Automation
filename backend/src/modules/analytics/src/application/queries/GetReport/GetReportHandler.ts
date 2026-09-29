@@ -18,33 +18,9 @@ export class GetReportHandler implements IQueryHandler<GetReportQuery> {
       switch (query.reportType.toUpperCase()) {
         case 'CANDIDATE':
         case 'ATS_PIPELINE':
-          data = await this.prisma.candidate.findMany({
-            where: {
-              companyId: query.companyId,
-              isDeleted: false,
-              ...query.filters,
-            },
-            include: { profile: true },
-          });
-          headers = ['ID', 'Name', 'Email', 'Status', 'Applied Date'];
-          rows = data.map((c) => [
-            c.candidateNumber || c.id,
-            `${c.profile?.firstName || ''} ${c.profile?.lastName || ''}`.trim(),
-            c.profile?.email || '',
-            c.status,
-            c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '',
-          ]);
-          break;
         case 'ATS_INTERVIEW':
-          data = [];
-          headers = ['Interview ID', 'Candidate', 'Title', 'Type', 'Status', 'Scheduled At'];
-          rows = [];
-          break;
         case 'ATS_OFFER':
-          data = [];
-          headers = ['Offer ID', 'Candidate', 'Status', 'Base Salary', 'Currency', 'Joining Date'];
-          rows = [];
-          break;
+          return Result.fail('Recruitment and ATS reports are disabled in this minimalist HR system.');
         case 'EMPLOYEE':
           data = await this.prisma.employee.findMany({
             where: {

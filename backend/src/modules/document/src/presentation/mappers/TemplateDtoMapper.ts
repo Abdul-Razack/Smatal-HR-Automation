@@ -42,6 +42,7 @@ export class TemplateDtoMapper {
       versionNumber: version.versionNumber,
       status: version.status,
       contentType: version.contentType,
+      content: version.content,
       notes: version.notes ?? undefined,
       importStatus: version.importStatus ?? undefined,
       originalFilename: version.originalFilename ?? undefined,

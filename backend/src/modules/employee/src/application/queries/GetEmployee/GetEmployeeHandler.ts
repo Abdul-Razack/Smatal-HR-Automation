@@ -15,7 +15,7 @@ export class GetEmployeeHandler implements IQueryHandler<GetEmployeeQuery> {
       where: { id: query.employeeId, companyId: query.companyId, isDeleted: false },
       include: {
         profile: {
-          select: { firstName: true, lastName: true, personalEmail: true, phone: true, profilePhoto: true }
+          select: { firstName: true, lastName: true, personalEmail: true, phone: true, profilePhoto: true, address: true, dateOfBirth: true, gender: true }
         },
         department: { select: { id: true, name: true } },
         designation: { select: { id: true, name: true } },
@@ -43,8 +43,15 @@ export class GetEmployeeHandler implements IQueryHandler<GetEmployeeQuery> {
     dto.branchId = employee.branchId;
     dto.reportsToId = employee.reportsToId;
     dto.employeeNumber = employee.employeeNumber;
+    dto.employmentType = employee.employmentType;
+    dto.salary = employee.salary ? Number(employee.salary) : null;
     dto.confirmationDate = employee.confirmationDate;
     dto.probationEndDate = employee.probationEndDate;
+    dto.resignationDate = employee.resignationDate;
+    dto.lastWorkingDate = employee.lastWorkingDate;
+    dto.noticePeriodDays = employee.noticePeriodDays;
+    dto.resignationReason = (employee as any).resignationReason;
+    dto.resignationStatus = (employee as any).resignationStatus;
     dto.terminationDate = employee.terminationDate;
     dto.version = employee.version;
     dto.createdAt = employee.createdAt;

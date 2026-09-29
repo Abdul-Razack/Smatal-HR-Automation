@@ -33,10 +33,30 @@ export function DesignationList() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              openModal({
+                id: 'edit-designation',
+                type: 'side-panel',
+                title: 'Edit Designation',
+                content: <DesignationForm initialData={row.original} />,
+              })
+            }
+            title="Edit Designation"
+          >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={() =>
+              alert('Designation deletion is restricted when active employees are assigned.')
+            }
+            title="Delete Designation"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

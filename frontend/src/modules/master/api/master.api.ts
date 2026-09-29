@@ -4,11 +4,11 @@ import { DocumentType, FieldDefinition, FieldGroup } from '../types';
 export const masterApi = {
   // Document Types
   listDocumentTypes: async (): Promise<DocumentType[]> => {
-    // Backend missing GET endpoint for document types, resolving empty array
-    return Promise.resolve([]);
+    const response = await apiClient.get('/document-types');
+    return response.data?.data || response.data || [];
   },
   createDocumentType: async (data: Omit<DocumentType, 'id'>): Promise<void> => {
-    await apiClient.post('/master/document-types', data);
+    await apiClient.post('/document-types', data);
   },
 
   // Field Groups

@@ -17,16 +17,21 @@ interface SidebarProps {
 export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
   const pathname = usePathname();
   const permissions = usePermissions();
+  const roles = useAuthStore((state) => state.roles);
 
   // Filter and sort navigation items based on permissions
   const authorizedNavigation = React.useMemo(() => {
+    const isSuperAdmin = roles.includes('SUPER_ADMIN') || permissions.includes('*');
     return navigationConfig
       .filter((item) => {
+        if (isSuperAdmin) return true;
         if (!item.permission || permissions.length === 0) return true;
-        return permissions.includes(item.permission);
+        if (permissions.includes(item.permission)) return true;
+        const normalized = item.permission.replace(':view', ':read');
+        return permissions.includes(normalized);
       })
       .sort((a, b) => a.order - b.order);
-  }, [permissions]);
+  }, [permissions, roles]);
 
   return (
     <div
@@ -50,7 +55,7 @@ export function Sidebar({ isOpen, setIsOpen }: SidebarProps) {
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="space-y-1 px-2">
           {authorizedNavigation.map((item) => {
-            const isActive = pathname === item.route;
+            const isActive = item.route === '/' ? pathname === '/' : pathname.startsWith(item.route);
             return (
               <Link
                 key={item.id}

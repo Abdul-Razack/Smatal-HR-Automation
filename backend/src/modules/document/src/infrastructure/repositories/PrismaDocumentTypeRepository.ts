@@ -27,6 +27,22 @@ export class PrismaDocumentTypeRepository implements IDocumentTypeRepository {
     return this.mapper.toDomain(record);
   }
 
+  async findByCode(
+    companyId: string,
+    code: string,
+  ): Promise<DocumentTypeAggregate | null> {
+    const record = await this.prisma.documentType.findUnique({
+      where: {
+        companyId_code: {
+          companyId,
+          code,
+        },
+      },
+    });
+    if (!record) return null;
+    return this.mapper.toDomain(record);
+  }
+
   async save(documentType: DocumentTypeAggregate): Promise<void> {
     const data = this.mapper.toPersistence(documentType);
 

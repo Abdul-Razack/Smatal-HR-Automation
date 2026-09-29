@@ -74,6 +74,23 @@ export function TemplateEditor({ initialContent, onChange }: TemplateEditorProps
     },
   });
 
+  React.useEffect(() => {
+    if (editor && initialContent && editor.getHTML() !== initialContent) {
+      editor.commands.setContent(initialContent);
+    }
+  }, [editor, initialContent]);
+
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && editor) {
+      (window as any).__templateEditor = editor;
+    }
+    return () => {
+      if (typeof window !== 'undefined' && (window as any).__templateEditor === editor) {
+        delete (window as any).__templateEditor;
+      }
+    };
+  }, [editor]);
+
   const handleInsertPlaceholder = (key: string) => {
     if (editor) {
       editor.chain().focus().insertContent(key).run();

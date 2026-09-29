@@ -24,7 +24,6 @@ export function TemplatePreview({ templateId }: { templateId: string }) {
       const response = await api.post(`/templates/${templateId}/preview`, {
         mode,
         format,
-        candidateId: 'test-candidate', // Mock ID for testing
       }, {
         responseType: format === 'PDF' ? 'blob' : 'json'
       });

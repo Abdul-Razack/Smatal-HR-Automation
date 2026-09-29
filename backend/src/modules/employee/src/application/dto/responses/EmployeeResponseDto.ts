@@ -12,8 +12,15 @@ export class EmployeeResponseDto {
   branchId?: string | null;
   reportsToId?: string | null;
   employeeNumber?: string | null;
+  employmentType?: string | null;
+  salary?: number | null;
   confirmationDate?: Date | null;
   probationEndDate?: Date | null;
+  resignationDate?: Date | null;
+  lastWorkingDate?: Date | null;
+  noticePeriodDays?: number | null;
+  resignationReason?: string | null;
+  resignationStatus?: string | null;
   terminationDate?: Date | null;
   version: number;
   createdAt: Date;
@@ -28,6 +35,9 @@ export class EmployeeResponseDto {
     lastName: string;
     personalEmail: string;
     phone?: string | null;
+    address?: string | null;
+    dateOfBirth?: Date | string | null;
+    gender?: string | null;
     profilePhoto?: string | null;
   } | null;
 

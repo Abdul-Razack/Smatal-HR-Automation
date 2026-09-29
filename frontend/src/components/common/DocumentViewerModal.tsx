@@ -1,21 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { Download, FileText, Printer, X } from 'lucide-react';
+import { Download, FileText, Printer, X, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-// Removed unused imports
-
-// Export an additional hook to fetch the preview URL
-// In useDocumentQueries.ts:
-// export function useDocumentPreview(id: string) {
-//   return useQuery({
-//     queryKey: ['documents', id, 'preview'],
-//     queryFn: () => DocumentApiService.getDocumentPreview(id),
-//     enabled: !!id,
-//   });
-// }
+import { DocumentApiService } from '@/modules/document/api/DocumentApiService';
 
 interface DocumentViewerModalProps {
   documentId: string | null;
@@ -23,30 +12,75 @@ interface DocumentViewerModalProps {
 }
 
 export function DocumentViewerModal({ documentId, onClose }: DocumentViewerModalProps) {
-  // We can fetch the document details if we want to show metadata
-  // const { data: document } = useGeneratedDocument(documentId || '');
-
-  // For this mock MVP, we'll pretend we have a PDF URL or use a skeleton.
   const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
-  // In a real app we'd fetch the preview URL:
-  // const { data: previewData, isLoading: previewLoading } = useDocumentPreview(documentId || '');
-  // const pdfUrl = previewData?.previewUrl;
-
-  // Mocking PDF load
   React.useEffect(() => {
-    if (documentId) {
-      setLoading(true);
-      const t = setTimeout(() => setLoading(false), 1500);
-      return () => clearTimeout(t);
+    let active = true;
+    let createdUrl: string | null = null;
+
+    if (!documentId) {
+      setPdfUrl(null);
+      setError(null);
+      setLoading(false);
+      return;
     }
+
+    setLoading(true);
+    setError(null);
+
+    DocumentApiService.getDocumentPreviewBlob(documentId, 'pdf')
+      .then((blob) => {
+        if (!active) return;
+        createdUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        setPdfUrl(createdUrl);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err?.message || 'Failed to load PDF preview.');
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+      }
+    };
   }, [documentId]);
+
+  const handleDownload = async () => {
+    if (!documentId) return;
+    try {
+      await DocumentApiService.downloadDocumentFile(documentId, 'pdf');
+    } catch (err: any) {
+      alert(err?.message || 'Failed to download document');
+    }
+  };
+
+  const handlePrint = () => {
+    if (iframeRef.current?.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.focus();
+        iframeRef.current.contentWindow.print();
+        return;
+      } catch {
+        // Fallback if cross-origin or blocked
+      }
+    }
+    if (pdfUrl) {
+      window.open(pdfUrl, '_blank');
+    }
+  };
 
   if (!documentId) return null;
 
   return (
     <Dialog open={!!documentId} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogContent hideCloseButton className="max-w-5xl h-[90vh] p-0 flex flex-col overflow-hidden">
         <div className="sr-only">
           <DialogTitle>Document Viewer</DialogTitle>
           <DialogDescription>Previewing document {documentId}</DialogDescription>
@@ -59,11 +93,21 @@ export function DocumentViewerModal({ documentId, onClose }: DocumentViewerModal
             <span>Document Preview</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrint}
+              disabled={loading || !!error || !pdfUrl}
+            >
               <Printer className="w-4 h-4 mr-2" />
               Print
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownload}
+              disabled={loading || !!error}
+            >
               <Download className="w-4 h-4 mr-2" />
               Download PDF
             </Button>
@@ -75,16 +119,31 @@ export function DocumentViewerModal({ documentId, onClose }: DocumentViewerModal
         </div>
 
         {/* Viewer Content */}
-        <div className="flex-1 bg-muted/10 p-4 md:p-8 overflow-hidden flex justify-center">
+        <div className="flex-1 bg-muted/10 p-2 md:p-6 overflow-hidden flex justify-center">
           {loading ? (
-            <div className="w-full max-w-3xl h-full bg-background shadow-lg rounded animate-pulse" />
-          ) : (
-            <div className="w-full max-w-3xl h-full bg-background shadow-lg rounded border p-12 text-center text-muted-foreground flex flex-col items-center justify-center">
-              <FileText className="w-16 h-16 mb-4 text-muted" />
-              <h3 className="text-xl font-semibold text-foreground mb-2">PDF Preview Simulation</h3>
-              <p>In a production environment, this area would render the actual PDF blob or iframe using the generated pre-signed URL for document {documentId}.</p>
+            <div className="w-full max-w-4xl h-full bg-background shadow-lg rounded animate-pulse flex flex-col items-center justify-center">
+              <FileText className="w-12 h-12 text-muted-foreground animate-bounce mb-3" />
+              <p className="text-muted-foreground text-sm">Rendering real PDF...</p>
             </div>
-          )}
+          ) : error ? (
+            <div className="w-full max-w-4xl h-full bg-background shadow-lg rounded border p-8 flex flex-col items-center justify-center text-center">
+              <AlertCircle className="w-12 h-12 text-destructive mb-3" />
+              <h3 className="text-lg font-semibold mb-1">Preview Unavailable</h3>
+              <p className="text-sm text-muted-foreground mb-4">{error}</p>
+              <Button variant="outline" size="sm" onClick={() => handleDownload()}>
+                <Download className="w-4 h-4 mr-2" /> Download File Instead
+              </Button>
+            </div>
+          ) : pdfUrl ? (
+            <div className="w-full max-w-4xl h-full bg-background shadow-lg rounded border overflow-hidden">
+              <iframe
+                ref={iframeRef}
+                src={pdfUrl}
+                className="w-full h-full border-none"
+                title="Real PDF Viewer"
+              />
+            </div>
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

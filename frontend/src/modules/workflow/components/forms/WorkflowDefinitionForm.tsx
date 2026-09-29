@@ -9,17 +9,17 @@ import { FormFieldConfig } from '@/shared/types';
 import { useWorkflow } from '../../hooks/useWorkflow';
 import { useModalStore } from '@/shared/modals/useModalStore';
 
-export function WorkflowDefinitionForm() {
+export function WorkflowDefinitionForm({ initialData }: { initialData?: any } = {}) {
   const { createWorkflow } = useWorkflow();
   const closeModal = useModalStore((state) => state.closeModal);
   
   const form = useForm<WorkflowDefinitionFormData>({
     resolver: zodResolver(workflowDefinitionSchema),
     defaultValues: {
-      name: '',
-      entityType: 'Document',
-      processCode: '',
-      description: '',
+      name: initialData?.name || '',
+      entityType: initialData?.entityType || 'Document',
+      processCode: initialData?.processCode || '',
+      description: initialData?.description || '',
     },
   });
 

@@ -23,6 +23,7 @@ import { LocalStorageAdapter } from '../../infrastructure/storage/LocalStorageAd
 import { S3StorageAdapter } from '../../infrastructure/storage/S3StorageAdapter';
 import { StorageFactory } from '../../infrastructure/storage/StorageFactory';
 import { PdfConverterService } from './src/infrastructure/services/PdfConverterService';
+import { PdfGenerationService } from './src/infrastructure/services/PdfGenerationService';
 
 // V2: Generators
 
@@ -35,6 +36,8 @@ import { DocxParser } from './src/infrastructure/parsers/DocxParser';
 
 // Command Handlers (V1 — unchanged)
 import { CreateDocumentTypeHandler } from './src/application/commands/CreateDocumentType/CreateDocumentTypeHandler';
+import { UpdateDocumentTypeHandler } from './src/application/commands/UpdateDocumentType/UpdateDocumentTypeHandler';
+import { UpdateDocumentTypeStatusHandler } from './src/application/commands/UpdateDocumentTypeStatus/UpdateDocumentTypeStatusHandler';
 import { CreateTemplateHandler } from './src/application/commands/CreateTemplate/CreateTemplateHandler';
 
 import { PublishTemplateVersionHandler } from './src/application/commands/PublishTemplateVersion/PublishTemplateVersionHandler';
@@ -44,8 +47,11 @@ import { GenerateDocumentHandler } from './src/application/commands/GenerateDocu
 import { ImportTemplateVersionHandler } from './src/application/commands/ImportTemplateVersion/ImportTemplateVersionHandler';
 import { MapTemplatePlaceholdersHandler } from './src/application/commands/MapTemplatePlaceholders/MapTemplatePlaceholdersHandler';
 import { DeleteTemplateVersionCommandHandler } from './src/application/commands/DeleteTemplateVersion/DeleteTemplateVersionCommandHandler';
+import { SaveHtmlTemplateVersionHandler } from './src/application/commands/SaveHtmlTemplateVersion/SaveHtmlTemplateVersionHandler';
 
 // Query Handlers (V1 — unchanged)
+import { ListDocumentTypesHandler } from './src/application/queries/ListDocumentTypes/ListDocumentTypesHandler';
+import { GetDocumentTypeHandler } from './src/application/queries/GetDocumentType/GetDocumentTypeHandler';
 import { GetTemplateHandler } from './src/application/queries/GetTemplate/GetTemplateHandler';
 import { GetGeneratedDocumentHandler } from './src/application/queries/GetGeneratedDocument/GetGeneratedDocumentHandler';
 import { GetAllGeneratedDocumentsHandler } from './src/application/queries/GetAllGeneratedDocuments/GetAllGeneratedDocumentsHandler';
@@ -79,12 +85,15 @@ import { PrismaEntityDataProvider } from './src/infrastructure/data/PrismaEntity
 
 import { PreviewTemplateHandler } from './src/application/queries/PreviewTemplate/PreviewTemplateHandler';
 import { PreviewUploadedTemplateHandler } from './src/application/queries/PreviewUploadedTemplate/PreviewUploadedTemplateHandler';
+import { GetTemplateContentHandler } from './src/application/queries/GetTemplateContent/GetTemplateContentHandler';
 
 import { OfferApprovedEventHandler } from './src/application/event-handlers/OfferApprovedEventHandler';
 
 const CommandHandlers = [
   // V1
   CreateDocumentTypeHandler,
+  UpdateDocumentTypeHandler,
+  UpdateDocumentTypeStatusHandler,
   CreateTemplateHandler,
 
   PublishTemplateVersionHandler,
@@ -93,6 +102,7 @@ const CommandHandlers = [
   ImportTemplateVersionHandler,
   MapTemplatePlaceholdersHandler,
   DeleteTemplateVersionCommandHandler,
+  SaveHtmlTemplateVersionHandler,
 ];
 
 const EventHandlers = [
@@ -100,6 +110,9 @@ const EventHandlers = [
 ];
 
 const QueryHandlers = [
+  // Document Types
+  ListDocumentTypesHandler,
+  GetDocumentTypeHandler,
   // V1
   GetTemplateHandler,
   GetGeneratedDocumentHandler,
@@ -110,6 +123,7 @@ const QueryHandlers = [
   GetGlobalPlaceholdersHandler,
   PreviewTemplateHandler,
   PreviewUploadedTemplateHandler,
+  GetTemplateContentHandler,
 ];
 
 const Repositories = [
@@ -145,6 +159,7 @@ const Repositories = [
     GeneratedDocumentMapper,
     // Services (V1)
     DocumentDomainService,
+    PdfGenerationService,
     PdfConverterService,
     PrismaUnitOfWork,
     BusinessIdGenerator,
@@ -185,6 +200,7 @@ const Repositories = [
     // V2 exports (for future cross-module use)
     StorageFactory,
     DocxParser,
+    PdfGenerationService,
     PdfConverterService,
   ],
 })

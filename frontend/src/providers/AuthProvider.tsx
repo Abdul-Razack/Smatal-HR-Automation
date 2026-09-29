@@ -32,11 +32,16 @@ export function AuthProvider({ children }: { children: any }) {
     authApi
       .getMe()
       .then((user: any) => {
-        setUser({
-          id: user.id,
-          name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-          email: user.email,
-        });
+        setUser(
+          {
+            id: user.id,
+            name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+            email: user.email,
+            companyId: user.companyId,
+          },
+          user.roles || [],
+          user.permissions || [],
+        );
       })
       .catch(() => {
         // Token is invalid/expired — clear everything

@@ -9,16 +9,16 @@ import { FormFieldConfig } from '@/shared/types';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useModalStore } from '@/shared/modals/useModalStore';
 
-export function DesignationForm() {
+export function DesignationForm({ initialData }: { initialData?: any } = {}) {
   const { createDesignation } = useOrganization();
   const closeModal = useModalStore((state) => state.closeModal);
   
   const form = useForm<DesignationFormData>({
     resolver: zodResolver(designationSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      level: 1,
+      name: initialData?.name || '',
+      code: initialData?.code || '',
+      level: initialData?.level || 1,
     },
   });
 

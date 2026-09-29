@@ -26,10 +26,13 @@ export class JwtRefreshStrategy extends PassportStrategy(
     }
 
     return {
+      id: payload.sub,
       userId: payload.sub,
       email: payload.email,
       companyId: payload.companyId,
       profileId: payload.profileId,
+      roles: payload.roles || [],
+      permissions: payload.permissions || [],
     };
   }
 }

@@ -9,5 +9,6 @@ export class ListEmployeesQuery implements IQuery {
     public readonly limit: number = 20,
     public readonly sortField: string = 'createdAt',
     public readonly sortDirection: 'asc' | 'desc' = 'desc',
+    public readonly search?: string,
   ) {}
 }

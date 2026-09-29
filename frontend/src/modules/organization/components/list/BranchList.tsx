@@ -44,10 +44,30 @@ export function BranchList() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              openModal({
+                id: 'edit-branch',
+                type: 'side-panel',
+                title: 'Edit Branch',
+                content: <BranchForm initialData={row.original} />,
+              })
+            }
+            title="Edit Branch"
+          >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={() =>
+              alert('Branch deletion is restricted when active departments or staff are assigned to this location.')
+            }
+            title="Delete Branch"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

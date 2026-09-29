@@ -9,20 +9,20 @@ import { FormFieldConfig } from '@/shared/types';
 import { useOrganization } from '../../hooks/useOrganization';
 import { useModalStore } from '@/shared/modals/useModalStore';
 
-export function BranchForm() {
+export function BranchForm({ initialData }: { initialData?: any } = {}) {
   const { createBranch } = useOrganization();
   const closeModal = useModalStore((state) => state.closeModal);
   
   const form = useForm<BranchFormData>({
     resolver: zodResolver(branchSchema),
     defaultValues: {
-      name: '',
-      code: '',
-      isHeadquarters: false,
-      addressLine1: '',
-      city: '',
-      state: '',
-      country: '',
+      name: initialData?.name || '',
+      code: initialData?.code || '',
+      isHeadquarters: initialData?.isHeadquarters || false,
+      addressLine1: initialData?.addressLine1 || '',
+      city: initialData?.city || '',
+      state: initialData?.state || '',
+      country: initialData?.country || '',
     },
   });
 

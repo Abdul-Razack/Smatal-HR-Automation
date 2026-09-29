@@ -1,16 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsIn, IsOptional, IsString } from 'class-validator';
 
 export class PreviewRequestDto {
   @ApiProperty({ description: 'SAMPLE or LIVE', example: 'SAMPLE' })
+  @IsIn(['SAMPLE', 'LIVE'])
   mode: 'SAMPLE' | 'LIVE';
 
   @ApiProperty({ description: 'HTML or PDF', example: 'HTML' })
+  @IsIn(['HTML', 'PDF'])
   format: 'HTML' | 'PDF';
 
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   candidateId?: string;
 
   @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
   employeeId?: string;
 }
 

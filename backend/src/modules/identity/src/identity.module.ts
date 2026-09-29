@@ -26,6 +26,7 @@ import {
   AssignRoleHandler,
   DeactivateUserHandler,
   CreateRoleHandler,
+  RefreshTokenHandler,
 } from './application/commands/identity.handlers';
 import {
   GetUserByIdHandler,
@@ -34,6 +35,7 @@ import {
   GetRoleByIdHandler,
   ListRolesHandler,
   GetProfileByIdHandler,
+  GetUserPermissionsHandler,
 } from './application/queries/identity.query.handlers';
 
 // Auth Strategies
@@ -47,6 +49,7 @@ const CommandHandlers = [
   AssignRoleHandler,
   DeactivateUserHandler,
   CreateRoleHandler,
+  RefreshTokenHandler,
 ];
 
 const QueryHandlers = [
@@ -56,6 +59,7 @@ const QueryHandlers = [
   GetRoleByIdHandler,
   ListRolesHandler,
   GetProfileByIdHandler,
+  GetUserPermissionsHandler,
 ];
 
 const Repositories = [

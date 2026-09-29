@@ -1,8 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { ChevronLeft, FileEdit, Trash2, FilePlus2 } from 'lucide-react';
+import { ChevronLeft, FileEdit, Trash2, FilePlus2, Eye, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,8 @@ import { VersionTimeline } from '@/components/common/VersionTimeline';
 import { PlaceholderMappingTable } from '@/components/common/PlaceholderMappingTable';
 import { ConfirmDialog } from '@/components/common/ConfirmDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PreviewTemplateModal } from '@/modules/document/components/details/PreviewTemplateModal';
+import { apiClient as api } from '@/api/client';
 
 import {
   useTemplate,
@@ -40,6 +43,9 @@ export default function TemplateDetailsPage() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState('versions');
+  const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
+  const [previewData, setPreviewData] = React.useState<any>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = React.useState(false);
 
   if (isLoading) {
     return (
@@ -101,16 +107,114 @@ export default function TemplateDetailsPage() {
     }
   };
 
+  const handlePreviewRefresh = async (
+    mode: 'SAMPLE' | 'LIVE',
+    format: 'HTML' | 'PDF',
+    employeeId?: string,
+  ) => {
+    setIsPreviewLoading(true);
+    try {
+      const response = await api.post(
+        `/templates/${templateId}/preview`,
+        {
+          mode,
+          format,
+          employeeId: mode === 'LIVE' ? employeeId : undefined,
+        },
+        {
+          responseType: format === 'PDF' ? 'blob' : 'json',
+        },
+      );
+
+      if (format === 'PDF') {
+        const headers = response.headers;
+        const pdfBlob = response.data instanceof Blob 
+          ? response.data 
+          : new Blob([response.data], { type: 'application/pdf' });
+        const blobUrl = URL.createObjectURL(pdfBlob);
+
+        const reader = new FileReader();
+        reader.readAsDataURL(pdfBlob);
+        reader.onloadend = () => {
+          const base64data = reader.result?.toString().split(',')[1];
+          setPreviewData({
+            blobUrl,
+            contentBase64: base64data,
+            mimeType: 'application/pdf',
+            errors: JSON.parse(headers['x-validation-errors'] || '[]'),
+            warnings: JSON.parse(headers['x-validation-warnings'] || '[]'),
+            resolvedKeys: JSON.parse(headers['x-resolved-keys'] || '[]'),
+            unresolvedKeys: JSON.parse(headers['x-unresolved-keys'] || '[]'),
+          });
+          if (!isPreviewOpen) setIsPreviewOpen(true);
+        };
+      } else {
+        const resData = response.data?.data?.data ?? response.data?.data ?? response.data;
+        setPreviewData({
+          html: resData?.html || '',
+          contentBase64: Buffer.from(resData?.html || '').toString('base64'),
+          mimeType: 'text/html',
+          errors: resData?.errors || [],
+          warnings: resData?.warnings || [],
+          resolvedKeys: resData?.resolvedKeys || [],
+          unresolvedKeys: resData?.unresolvedKeys || [],
+        });
+        if (!isPreviewOpen) setIsPreviewOpen(true);
+      }
+    } catch (error: any) {
+      toast.error('Failed to prepare preview: ' + (error?.response?.data?.message || error?.message));
+    } finally {
+      setIsPreviewLoading(false);
+    }
+  };
+
+  const handlePreview = () => {
+    setIsPreviewOpen(true);
+    handlePreviewRefresh('SAMPLE', 'HTML');
+  };
+
+  const handleDownloadVersion = async (versionId: string) => {
+    try {
+      const res = await api.get(`/templates/${templateId}/content?versionId=${versionId}`);
+      const payload = res.data?.data?.data ?? res.data?.data ?? res.data;
+      if (payload?.content) {
+        const blob = new Blob([payload.content], { type: 'text/html' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const vNum = payload.versionNumber ?? '1';
+        a.download = `${template.name.replace(/\s+/g, '_')}_v${vNum}.html`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        toast.success(`Version v${vNum} downloaded.`);
+      } else {
+        toast.error('Template content not available for download.');
+      }
+    } catch (err: any) {
+      toast.error('Failed to download template version.');
+    }
+  };
+
   // Find the latest draft version that might require mapping
   const latestDraft = template.versions?.find(v => v.status === 'DRAFT' || v.importStatus === 'MAPPING_REQUIRED');
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/documents/templates')} aria-label="Back to templates">
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
+      {/* Header with Back Navigation */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4">
+        <div className="flex items-center gap-4">
+          <Link href="/documents/templates">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 font-medium shadow-sm hover:bg-accent"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back to Templates</span>
+            </Button>
+          </Link>
           <div>
             <div className="flex items-center space-x-3 mb-1">
               <h2 className="text-2xl font-bold tracking-tight">{template.name}</h2>
@@ -120,8 +224,19 @@ export default function TemplateDetailsPage() {
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm">
-            <FileEdit className="mr-2 h-4 w-4" /> Edit Details
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreview}
+          >
+            <Eye className="mr-2 h-4 w-4" /> Preview
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push(`/documents/templates/${templateId}/edit`)}
+          >
+            <FileEdit className="mr-2 h-4 w-4" /> Edit Content
           </Button>
           <Button variant="destructive" size="sm" onClick={() => setDeleteDialogOpen(true)}>
             <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -192,8 +307,8 @@ export default function TemplateDetailsPage() {
             <VersionTimeline 
               versions={template.versions || []} 
               onPublish={handlePublish}
-              onRollback={(v) => console.log('rollback', v)}
-              onDownload={(v) => console.log('download', v)}
+              onRollback={() => {}}
+              onDownload={handleDownloadVersion}
               onDelete={handleVersionDelete}
               isLoading={publishVersion.isPending || deleteVersion.isPending}
             />
@@ -231,6 +346,16 @@ export default function TemplateDetailsPage() {
         variant="destructive"
         onConfirm={handleDelete}
       />
+
+      {isPreviewOpen && (
+        <PreviewTemplateModal
+          open={isPreviewOpen}
+          onOpenChange={setIsPreviewOpen}
+          previewData={previewData}
+          isLoading={isPreviewLoading}
+          onRefresh={handlePreviewRefresh}
+        />
+      )}
     </div>
   );
 }

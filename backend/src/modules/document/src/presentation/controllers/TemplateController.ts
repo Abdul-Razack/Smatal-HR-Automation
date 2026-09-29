@@ -4,18 +4,17 @@ import {
   Put,
   Delete,
   Body,
-  Headers,
   Param,
   Get,
   Query,
   UseInterceptors,
   UploadedFile,
   BadRequestException,
-  UnauthorizedException,
   NotFoundException,
   Res,
   StreamableFile,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -39,11 +38,13 @@ import { GetAllTemplatesQuery } from '../../application/queries/GetAllTemplates/
 
 import { DeleteTemplateVersionCommand } from '../../application/commands/DeleteTemplateVersion/DeleteTemplateVersionCommand';
 import { ImportTemplateVersionCommand } from '../../application/commands/ImportTemplateVersion/ImportTemplateVersionCommand';
+import { SaveHtmlTemplateVersionCommand } from '../../application/commands/SaveHtmlTemplateVersion/SaveHtmlTemplateVersionCommand';
 import { MapTemplatePlaceholdersCommand } from '../../application/commands/MapTemplatePlaceholders/MapTemplatePlaceholdersCommand';
 import { GetTemplatePlaceholdersQuery } from '../../application/queries/GetTemplatePlaceholders/GetTemplatePlaceholdersQuery';
 import { GetGlobalPlaceholdersQuery } from '../../application/queries/GetGlobalPlaceholders/GetGlobalPlaceholdersQuery';
 import { PreviewTemplateQuery } from '../../application/queries/PreviewTemplate/PreviewTemplateQuery';
 import { PreviewUploadedTemplateQuery } from '../../application/queries/PreviewUploadedTemplate/PreviewUploadedTemplateQuery';
+import { GetTemplateContentQuery } from '../../application/queries/GetTemplateContent/GetTemplateContentQuery';
 
 import { ApiResponse } from '../../../../../common/dto/ApiResponse';
 import { TemplateListQueryDto } from '../dtos/QueryDtos';
@@ -78,12 +79,12 @@ export class TemplateController {
     type: [GlobalPlaceholderResponseDto],
   })
   async getGlobalPlaceholders(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query('search') search?: string,
     @Query('entity') entity?: string,
   ) {
     const result = await this.queryBus.execute(
-      new GetGlobalPlaceholdersQuery(companyId, search, entity),
+      new GetGlobalPlaceholdersQuery(req.user.companyId, search, entity),
     );
     if (result.isFailure) throw new BadRequestException(result.error);
     return ApiResponse.success<GlobalPlaceholderResponseDto[]>(
@@ -99,7 +100,7 @@ export class TemplateController {
     type: PreviewResponseDto,
   })
   async previewTemplate(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Param('id') id: string,
     @Body() body: PreviewRequestDto,
     @Res({ passthrough: true }) res: Response,
@@ -107,7 +108,7 @@ export class TemplateController {
     const result = await this.queryBus.execute(
       new PreviewTemplateQuery(
         id,
-        companyId,
+        req.user.companyId,
         body.mode,
         body.format,
         body.candidateId,
@@ -144,7 +145,7 @@ export class TemplateController {
     type: PreviewResponseDto,
   })
   async previewUploadedTemplate(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @UploadedFile() file: Express.Multer.File,
     @Body('mode') mode: 'SAMPLE' | 'LIVE',
     @Body('format') format: 'HTML' | 'PDF',
@@ -158,7 +159,7 @@ export class TemplateController {
     const result = await this.queryBus.execute(
       new PreviewUploadedTemplateQuery(
         file.buffer,
-        companyId,
+        req.user.companyId,
         mode,
         format,
         candidateId,
@@ -189,12 +190,12 @@ export class TemplateController {
   @ApiOperation({ summary: 'Get all templates with pagination and filtering' })
   @SwaggerResponse({ status: 200, description: 'Paginated list of templates' })
   async getTemplates(
-    @Headers('x-company-id') companyId: string,
+    @Request() req: any,
     @Query() query: TemplateListQueryDto,
   ) {
     const result = await this.queryBus.execute(
       new GetAllTemplatesQuery(
-        companyId,
+        req.user.companyId,
         query.page || 1,
         query.pageSize || 10,
         query.sort,
@@ -216,35 +217,55 @@ export class TemplateController {
     description: 'Template created successfully',
   })
   async createTemplate(
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
+    @Request() req: any,
     @Body() body: CreateTemplateRequestDto,
   ) {
     const result = await this.commandBus.execute(
       new CreateTemplateCommand(
-        companyId,
+        req.user.companyId,
         body.documentTypeId,
         body.name,
         body.description,
-        userId,
+        req.user.userId,
       ),
     );
     if (result.isFailure) throw new BadRequestException(result.error);
     return ApiResponse.success<{ id: string }>({ id: result.getValue() });
   }
 
+  @Post(':id/versions/html')
+  @ApiOperation({ summary: 'Save HTML content from the browser editor as a new template version' })
+  @SwaggerResponse({ status: 201, description: 'HTML version saved successfully' })
+  async saveHtmlVersion(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Body() body: { content: string; notes?: string },
+  ) {
+    if (!body.content || body.content.trim().length === 0) {
+      throw new BadRequestException('content is required.');
+    }
+    const result = await this.commandBus.execute(
+      new SaveHtmlTemplateVersionCommand(
+        id,
+        req.user.companyId,
+        body.content,
+        body.notes,
+        req.user.userId,
+      ),
+    );
+    if (result.isFailure) throw new BadRequestException(result.error);
+    return ApiResponse.success(result.getValue(), { message: 'HTML version saved successfully.' });
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a template (metadata only)' })
-  @SwaggerResponse({
-    status: 200,
-    description: 'Template updated successfully',
-  })
+  @SwaggerResponse({ status: 200, description: 'Template updated successfully' })
   async updateTemplate(
+    @Request() req: any,
     @Param('id') id: string,
-    @Headers('x-company-id') companyId: string,
-    @Body() body: any,
+    @Body() body: { name?: string; description?: string },
   ) {
-    // Stub for now
+    // Metadata updates will be implemented in a future step (Company Settings)
     return ApiResponse.success<{ id: string }>({ id });
   }
 
@@ -255,14 +276,12 @@ export class TemplateController {
     description: 'Template archived successfully',
   })
   async archiveTemplate(
+    @Request() req: any,
     @Param('id') id: string,
-    @Headers('x-company-id') companyId: string,
   ) {
     // Stub for now
     return ApiResponse.success<{ id: string }>({ id });
   }
-
-
 
   @Post(':id/versions/:versionId/publish')
   @ApiOperation({ summary: 'Publish a specific template version' })
@@ -271,17 +290,16 @@ export class TemplateController {
     description: 'Version published successfully',
   })
   async publishVersion(
+    @Request() req: any,
     @Param('id') templateId: string,
     @Param('versionId') versionId: string,
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
   ) {
     const result = await this.commandBus.execute(
       new PublishTemplateVersionCommand(
         templateId,
         versionId,
-        companyId,
-        userId,
+        req.user.companyId,
+        req.user.userId,
       ),
     );
     if (result.isFailure) throw new BadRequestException(result.error);
@@ -297,15 +315,15 @@ export class TemplateController {
     description: 'Version deleted successfully',
   })
   async deleteVersion(
+    @Request() req: any,
     @Param('id') templateId: string,
     @Param('versionId') versionId: string,
-    @Headers('x-company-id') companyId: string,
   ) {
     const result = await this.commandBus.execute(
       new DeleteTemplateVersionCommand(
         templateId,
         versionId,
-        companyId,
+        req.user.companyId,
       ),
     );
     if (result.isFailure) throw new BadRequestException(result.error);
@@ -318,14 +336,29 @@ export class TemplateController {
   @ApiOperation({ summary: 'Get details of a specific template' })
   @SwaggerResponse({ status: 200, description: 'Template details retrieved' })
   async getTemplate(
+    @Request() req: any,
     @Param('id') templateId: string,
-    @Headers('x-company-id') companyId: string,
   ) {
     const result = await this.queryBus.execute(
-      new GetTemplateQuery(companyId, templateId),
+      new GetTemplateQuery(req.user.companyId, templateId),
     );
     if (result.isFailure) throw new NotFoundException(result.error);
     return ApiResponse.success<TemplateDto>(result.getValue());
+  }
+
+  @Get(':id/content')
+  @ApiOperation({ summary: 'Get editable HTML content of a template version' })
+  @SwaggerResponse({ status: 200, description: 'Template content retrieved' })
+  async getTemplateContent(
+    @Request() req: any,
+    @Param('id') templateId: string,
+    @Query('versionId') versionId?: string,
+  ) {
+    const result = await this.queryBus.execute(
+      new GetTemplateContentQuery(templateId, req.user.companyId, versionId),
+    );
+    if (result.isFailure) throw new NotFoundException(result.error);
+    return ApiResponse.success(result.getValue());
   }
 
   @Post('import')
@@ -337,9 +370,8 @@ export class TemplateController {
   })
   @UseInterceptors(FileInterceptor('file'))
   async importTemplate(
+    @Request() req: any,
     @UploadedFile() file: Express.Multer.File,
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
     @Body('templateId') templateId: string,
     @Body('notes') notes?: string,
   ) {
@@ -349,13 +381,13 @@ export class TemplateController {
     const result = await this.commandBus.execute(
       new ImportTemplateVersionCommand(
         templateId,
-        companyId,
+        req.user.companyId,
         file.buffer,
         file.originalname,
         file.mimetype,
         file.size,
         notes,
-        userId,
+        req.user.userId,
       ),
     );
 
@@ -370,19 +402,18 @@ export class TemplateController {
   @ApiOperation({ summary: 'Save Field Definition mappings for placeholders' })
   @SwaggerResponse({ status: 200, description: 'Mappings saved successfully' })
   async mapPlaceholders(
+    @Request() req: any,
     @Param('id') templateId: string,
     @Param('versionId') versionId: string,
-    @Headers('x-company-id') companyId: string,
-    @Headers('x-user-id') userId: string,
     @Body() body: MapPlaceholdersRequestDto,
   ) {
     const result = await this.commandBus.execute(
       new MapTemplatePlaceholdersCommand(
         templateId,
         versionId,
-        companyId,
+        req.user.companyId,
         body.mappings.map((m) => ({ ...m, displayOrder: m.displayOrder || 0 })),
-        userId,
+        req.user.userId,
       ),
     );
     if (result.isFailure) throw new BadRequestException(result.error);
@@ -395,12 +426,12 @@ export class TemplateController {
   @ApiOperation({ summary: 'Get placeholders for a specific version' })
   @SwaggerResponse({ status: 200, description: 'Placeholders retrieved' })
   async getPlaceholders(
+    @Request() req: any,
     @Param('id') templateId: string,
     @Param('versionId') versionId: string,
-    @Headers('x-company-id') companyId: string,
   ) {
     const result = await this.queryBus.execute(
-      new GetTemplatePlaceholdersQuery(templateId, versionId, companyId),
+      new GetTemplatePlaceholdersQuery(templateId, versionId, req.user.companyId),
     );
     if (result.isFailure) throw new NotFoundException(result.error);
     return ApiResponse.success<PlaceholderDto[]>(result.getValue());
@@ -410,11 +441,11 @@ export class TemplateController {
   @ApiOperation({ summary: 'Get all versions of a template' })
   @SwaggerResponse({ status: 200, description: 'Template versions retrieved' })
   async getVersions(
+    @Request() req: any,
     @Param('id') templateId: string,
-    @Headers('x-company-id') companyId: string,
   ) {
     const result = await this.queryBus.execute(
-      new GetTemplateQuery(companyId, templateId),
+      new GetTemplateQuery(req.user.companyId, templateId),
     );
     if (result.isFailure) throw new NotFoundException(result.error);
     const template = result.getValue();

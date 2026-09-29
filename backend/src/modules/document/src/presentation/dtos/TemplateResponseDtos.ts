@@ -36,6 +36,9 @@ export class TemplateVersionDto {
   @ApiProperty({ description: 'MIME content type (e.g., html or docx)' })
   contentType: string;
 
+  @ApiPropertyOptional({ description: 'HTML content or text for the version' })
+  content?: string;
+
   @ApiPropertyOptional({ description: 'Notes associated with this version' })
   notes?: string;
 
@@ -73,6 +76,12 @@ export class TemplateSummaryDto {
 
   @ApiProperty({ description: 'Number of versions available' })
   versionCount: number;
+
+  @ApiPropertyOptional({ description: 'Document type ID' })
+  documentTypeId?: string;
+
+  @ApiPropertyOptional({ description: 'Document type name' })
+  documentTypeName?: string;
 
   @ApiProperty({ description: 'Creation timestamp' })
   createdAt: Date;

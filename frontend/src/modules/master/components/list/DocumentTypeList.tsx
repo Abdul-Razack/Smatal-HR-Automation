@@ -33,10 +33,30 @@ export function DocumentTypeList() {
       header: 'Actions',
       cell: ({ row }) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              openModal({
+                id: 'edit-document-type',
+                type: 'side-panel',
+                title: 'Edit Document Type',
+                content: <DocumentTypeForm initialData={row.original} />,
+              })
+            }
+            title="Edit Document Type"
+          >
             <Edit2 className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            onClick={() =>
+              alert('Document type deletion is restricted when existing employee documents or templates reference this type.')
+            }
+            title="Delete Document Type"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

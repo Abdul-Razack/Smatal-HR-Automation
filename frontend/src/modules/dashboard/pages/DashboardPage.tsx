@@ -1,19 +1,27 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { analyticsApi } from '@/modules/analytics/api/analytics.api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useCurrentUser } from '@/modules/auth/hooks/useAuth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Users,
-  Building2,
-  GitBranch,
   UserCheck,
-  UserPlus,
   CheckCircle2,
   Clock,
-  TrendingUp,
+  UserMinus,
   CalendarDays,
+  FileText,
+  Building2,
+  ArrowRight,
+  ShieldCheck,
+  Briefcase,
+  AlertCircle,
+  Inbox,
 } from 'lucide-react';
 
 function StatCard({
@@ -32,7 +40,7 @@ function StatCard({
   accent?: string;
 }) {
   return (
-    <Card className="relative overflow-hidden">
+    <Card className="relative overflow-hidden transition-all hover:shadow-sm">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <div className={`rounded-md p-2 ${accent || 'bg-primary/10'}`}>
@@ -40,250 +48,436 @@ function StatCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-3xl font-bold tracking-tight">
+        <div className="text-2xl font-bold tracking-tight">
           {isLoading ? (
             <span className="inline-block h-8 w-16 animate-pulse rounded bg-muted" />
           ) : (
             value
           )}
         </div>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        )}
+        {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
       </CardContent>
     </Card>
   );
 }
 
-function RecentHireRow({
-  name,
-  businessId,
-  joinedAt,
-}: {
-  name: string;
-  businessId: string;
-  joinedAt: string;
-}) {
-  const initials = name
-    .split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2);
-
-  const date = new Date(joinedAt);
-  const formatted = date.toLocaleDateString('en-US', {
+function formatDate(dateStr?: string | Date | null) {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
+}
 
-  return (
-    <div className="flex items-center gap-3 py-3 border-b last:border-0">
-      <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm flex-shrink-0">
-        {initials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{name}</p>
-        <p className="text-xs text-muted-foreground">{businessId}</p>
-      </div>
-      <div className="text-xs text-muted-foreground flex items-center gap-1 flex-shrink-0">
-        <CalendarDays className="h-3 w-3" />
-        {formatted}
-      </div>
-    </div>
-  );
+function getDaysUntil(dateStr?: string | Date | null) {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  if (isNaN(target.getTime())) return null;
+  const now = new Date();
+  const diffTime = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays < 0) return `${Math.abs(diffDays)}d overdue`;
+  return `in ${diffDays}d`;
 }
 
 export default function DashboardPage() {
-  const { data: hrMetrics, isLoading: hrLoading } = useQuery({
-    queryKey: ['dashboard', 'HR'],
-    queryFn: () => analyticsApi.getDashboard('HR'),
+  const currentUser = useCurrentUser();
+
+  const { data: metrics, isLoading } = useQuery({
+    queryKey: ['dashboard', 'summary'],
+    queryFn: () => analyticsApi.getDashboardSummary(),
   });
 
-  const { data: orgMetrics, isLoading: orgLoading } = useQuery({
-    queryKey: ['dashboard', 'ORG'],
-    queryFn: () => analyticsApi.getDashboard('ORG'),
-  });
+  const greeting = React.useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
 
-  const recentHires = hrMetrics?.recentHires || [];
-  const conversionRate =
-    hrMetrics?.totalCandidates && hrMetrics.totalCandidates > 0
-      ? Math.round(((hrMetrics.convertedCandidates || 0) / hrMetrics.totalCandidates) * 100)
-      : 0;
+  const userName =
+    currentUser?.name ||
+    currentUser?.email?.split('@')[0] ||
+    'HR Administrator';
+
+  const newJoiners = metrics?.newJoinersThisMonth || [];
+  const upcomingConfirmations = metrics?.upcomingConfirmations || [];
+  const noticePeriodEmployees = metrics?.noticePeriodList || [];
+  const recentRelieved = metrics?.recentRelieved || [];
 
   return (
     <div className="flex-1 space-y-6 p-6 pt-4">
-      <div className="flex items-center justify-between">
+      {/* Header Greeting */}
+      <div className="flex items-center justify-between border-b pb-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground text-sm">Welcome back! Here&apos;s what&apos;s happening today.</p>
+          <h2 className="text-2xl font-bold tracking-tight">HR Dashboard</h2>
+          <p className="text-muted-foreground text-sm">
+            {greeting}, <span className="font-semibold text-foreground">{userName}</span>. Overview
+            of your organization&apos;s HR status.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/hr/employees">
+            <Button size="sm" variant="outline">
+              <Users className="h-4 w-4 mr-1.5" />
+              Employee Directory
+            </Button>
+          </Link>
+          <Link href="/hr/documents">
+            <Button size="sm">
+              <FileText className="h-4 w-4 mr-1.5" />
+              Generate Document
+            </Button>
+          </Link>
         </div>
       </div>
 
-      {/* Primary Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Row 1: Primary Employee Overview */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Employees"
+          value={metrics?.totalEmployees ?? 0}
+          subtitle="All recorded employees"
+          icon={Users}
+          isLoading={isLoading}
+          accent="bg-slate-700"
+        />
         <StatCard
           title="Active Employees"
-          value={hrMetrics?.activeEmployees ?? 0}
-          subtitle="Currently in the system"
+          value={metrics?.activeEmployees ?? 0}
+          subtitle="Currently working staff"
           icon={UserCheck}
-          isLoading={hrLoading}
-          accent="bg-blue-500"
+          isLoading={isLoading}
+          accent="bg-blue-600"
         />
         <StatCard
-          title="Total Candidates"
-          value={hrMetrics?.totalCandidates ?? 0}
-          subtitle={`${hrMetrics?.activeCandidates ?? 0} active in pipeline`}
-          icon={UserPlus}
-          isLoading={hrLoading}
-          accent="bg-violet-500"
-        />
-        <StatCard
-          title="Running Workflows"
-          value={hrMetrics?.runningWorkflows ?? 0}
-          subtitle={`${hrMetrics?.completedWorkflows ?? 0} completed total`}
-          icon={GitBranch}
-          isLoading={hrLoading}
+          title="Probation"
+          value={metrics?.probationEmployees ?? 0}
+          subtitle="Under evaluation period"
+          icon={Clock}
+          isLoading={isLoading}
           accent="bg-amber-500"
         />
         <StatCard
-          title="Conversion Rate"
-          value={`${conversionRate}%`}
-          subtitle="Candidates converted to employees"
-          icon={TrendingUp}
-          isLoading={hrLoading}
-          accent="bg-emerald-500"
-        />
-      </div>
-
-      {/* Secondary Stats */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <StatCard
-          title="Converted Candidates"
-          value={hrMetrics?.convertedCandidates ?? 0}
-          subtitle="Hired & onboarded"
+          title="Confirmed"
+          value={metrics?.confirmedEmployees ?? 0}
+          subtitle="Permanent staff members"
           icon={CheckCircle2}
-          isLoading={hrLoading}
-        />
-        <StatCard
-          title="Pending Approvals"
-          value={hrMetrics?.pendingApprovals ?? 0}
-          subtitle="Workflow stages awaiting review"
-          icon={Clock}
-          isLoading={hrLoading}
-        />
-        <StatCard
-          title="Completed Workflows"
-          value={hrMetrics?.completedWorkflows ?? 0}
-          subtitle="All time"
-          icon={Users}
-          isLoading={hrLoading}
+          isLoading={isLoading}
+          accent="bg-emerald-600"
         />
       </div>
 
-      {/* Bottom Panels */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* Recent Hires */}
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <UserCheck className="h-4 w-4 text-primary" />
-            <CardTitle className="text-base">Recent Hires</CardTitle>
+      {/* Row 2: Notice Period & Exit Metrics */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Notice Period"
+          value={metrics?.noticePeriodEmployees ?? 0}
+          subtitle="Currently serving notice"
+          icon={UserMinus}
+          isLoading={isLoading}
+          accent="bg-orange-600"
+        />
+        <StatCard
+          title="Relieved"
+          value={metrics?.relievedEmployees ?? 0}
+          subtitle="Exited employees"
+          icon={Briefcase}
+          isLoading={isLoading}
+          accent="bg-zinc-600"
+        />
+        <StatCard
+          title="Pending Resignations"
+          value={metrics?.pendingResignations ?? 0}
+          subtitle="Awaiting HR / Admin review"
+          icon={AlertCircle}
+          isLoading={isLoading}
+          accent="bg-rose-600"
+        />
+        <StatCard
+          title="Generated Documents"
+          value={metrics?.generatedDocuments ?? 0}
+          subtitle="Letters & official certificates"
+          icon={FileText}
+          isLoading={isLoading}
+          accent="bg-indigo-600"
+        />
+      </div>
+
+      {/* Main Content Sections: 2x2 Grid */}
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+        {/* Section 1: New Joiners This Month */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-blue-600" />
+                <CardTitle className="text-base">New Joiners This Month</CardTitle>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {newJoiners.length} {newJoiners.length === 1 ? 'Joiner' : 'Joiners'}
+              </Badge>
+            </div>
+            <CardDescription className="text-xs">
+              Employees whose official joining date falls within the current calendar month.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            {hrLoading ? (
-              <div className="space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-                    <div className="flex-1 space-y-1">
-                      <div className="h-3 w-32 bg-muted animate-pulse rounded" />
-                      <div className="h-2 w-20 bg-muted animate-pulse rounded" />
+          <CardContent className="flex-1 p-0">
+            {isLoading ? (
+              <div className="p-4 space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : newJoiners.length > 0 ? (
+              <div className="divide-y">
+                <div className="grid grid-cols-12 px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/30">
+                  <div className="col-span-5">Employee</div>
+                  <div className="col-span-4">Department / Designation</div>
+                  <div className="col-span-3 text-right">Joining Date</div>
+                </div>
+                {newJoiners.map((emp) => (
+                  <div key={emp.id} className="grid grid-cols-12 px-4 py-3 text-sm items-center hover:bg-muted/10">
+                    <div className="col-span-5 min-w-0 pr-2">
+                      <Link
+                        href={`/hr/employees/${emp.id}`}
+                        className="font-medium text-foreground hover:text-primary hover:underline truncate block"
+                      >
+                        {emp.name}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">{emp.employeeId}</span>
+                    </div>
+                    <div className="col-span-4 text-xs text-muted-foreground truncate pr-2">
+                      <p className="font-medium text-foreground truncate">{emp.designation}</p>
+                      <p className="truncate">{emp.department}</p>
+                    </div>
+                    <div className="col-span-3 text-xs text-right text-muted-foreground whitespace-nowrap">
+                      {formatDate(emp.joiningDate)}
                     </div>
                   </div>
                 ))}
               </div>
-            ) : recentHires.length > 0 ? (
-              <div>
-                {recentHires.slice(0, 5).map((hire) => (
-                  <RecentHireRow
-                    key={hire.id}
-                    name={hire.name}
-                    businessId={hire.businessId}
-                    joinedAt={hire.joinedAt}
-                  />
-                ))}
-              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                <Users className="h-8 w-8 mb-2 opacity-50" />
-                <p className="text-sm">No recent hires found</p>
+              <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Inbox className="h-8 w-8 mb-2 opacity-40" />
+                <p className="text-sm font-medium">No new joiners this month</p>
+                <p className="text-xs opacity-75">New employee registrations will appear here.</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Pipeline Overview */}
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            <GitBranch className="h-4 w-4 text-primary" />
-            <CardTitle className="text-base">Recruitment Pipeline</CardTitle>
+        {/* Section 2: Upcoming Confirmations */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-600" />
+                <CardTitle className="text-base">Upcoming Confirmations</CardTitle>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {upcomingConfirmations.length} Pending
+              </Badge>
+            </div>
+            <CardDescription className="text-xs">
+              Staff currently in probation with confirmation dates approaching in the next 30 days.
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            {hrLoading ? (
-              <div className="space-y-4">
+          <CardContent className="flex-1 p-0">
+            {isLoading ? (
+              <div className="p-4 space-y-3">
                 {[...Array(3)].map((_, i) => (
-                  <div key={i} className="space-y-1">
-                    <div className="h-3 w-24 bg-muted animate-pulse rounded" />
-                    <div className="h-2 bg-muted animate-pulse rounded-full" />
+                  <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : upcomingConfirmations.length > 0 ? (
+              <div className="divide-y">
+                <div className="grid grid-cols-12 px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/30">
+                  <div className="col-span-5">Employee</div>
+                  <div className="col-span-4">Designation</div>
+                  <div className="col-span-3 text-right">Confirmation Date</div>
+                </div>
+                {upcomingConfirmations.map((emp) => (
+                  <div key={emp.id} className="grid grid-cols-12 px-4 py-3 text-sm items-center hover:bg-muted/10">
+                    <div className="col-span-5 min-w-0 pr-2">
+                      <Link
+                        href={`/hr/employees/${emp.id}`}
+                        className="font-medium text-foreground hover:text-primary hover:underline truncate block"
+                      >
+                        {emp.name}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">{emp.employeeId}</span>
+                    </div>
+                    <div className="col-span-4 text-xs text-muted-foreground truncate pr-2">
+                      <span className="font-medium text-foreground">{emp.designation}</span>
+                    </div>
+                    <div className="col-span-3 text-right whitespace-nowrap">
+                      <p className="text-xs font-medium text-foreground">{formatDate(emp.confirmationDate)}</p>
+                      <span className="text-[11px] text-amber-600 font-medium">
+                        {getDaysUntil(emp.confirmationDate)}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="space-y-5 pt-2">
-                {[
-                  {
-                    label: 'Active Candidates',
-                    value: hrMetrics?.activeCandidates ?? 0,
-                    total: hrMetrics?.totalCandidates ?? 1,
-                    color: 'bg-blue-500',
-                  },
-                  {
-                    label: 'Converted to Employee',
-                    value: hrMetrics?.convertedCandidates ?? 0,
-                    total: hrMetrics?.totalCandidates ?? 1,
-                    color: 'bg-emerald-500',
-                  },
-                  {
-                    label: 'Workflows Running',
-                    value: hrMetrics?.runningWorkflows ?? 0,
-                    total: Math.max((hrMetrics?.runningWorkflows ?? 0) + (hrMetrics?.completedWorkflows ?? 0), 1),
-                    color: 'bg-amber-500',
-                  },
-                ].map(({ label, value, total, color }) => {
-                  const pct = total > 0 ? Math.round((value / total) * 100) : 0;
-                  return (
-                    <div key={label} className="space-y-1.5">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{label}</span>
-                        <span className="font-semibold">
-                          {value} <span className="text-muted-foreground font-normal">/ {total}</span>
-                        </span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${color} transition-all duration-500`}
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground text-right">{pct}%</p>
-                    </div>
-                  );
-                })}
+              <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <CheckCircle2 className="h-8 w-8 mb-2 opacity-40 text-emerald-600" />
+                <p className="text-sm font-medium">No upcoming confirmations</p>
+                <p className="text-xs opacity-75">No employees in probation due for confirmation within 30 days.</p>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Section 3: Notice Period */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserMinus className="h-4 w-4 text-orange-600" />
+                <CardTitle className="text-base">Notice Period</CardTitle>
+              </div>
+              <Badge variant="outline" className="text-xs text-orange-700 bg-orange-50 border-orange-200">
+                {noticePeriodEmployees.length} Active
+              </Badge>
+            </div>
+            <CardDescription className="text-xs">
+              Employees currently serving notice prior to final relief and handover.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 p-0">
+            {isLoading ? (
+              <div className="p-4 space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : noticePeriodEmployees.length > 0 ? (
+              <div className="divide-y">
+                <div className="grid grid-cols-12 px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/30">
+                  <div className="col-span-5">Employee</div>
+                  <div className="col-span-4">Designation</div>
+                  <div className="col-span-3 text-right">Last Working Date</div>
+                </div>
+                {noticePeriodEmployees.map((emp) => (
+                  <div key={emp.id} className="grid grid-cols-12 px-4 py-3 text-sm items-center hover:bg-muted/10">
+                    <div className="col-span-5 min-w-0 pr-2">
+                      <Link
+                        href={`/hr/employees/${emp.id}`}
+                        className="font-medium text-foreground hover:text-primary hover:underline truncate block"
+                      >
+                        {emp.name}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">{emp.employeeId}</span>
+                    </div>
+                    <div className="col-span-4 text-xs text-muted-foreground truncate pr-2">
+                      <span className="font-medium text-foreground">{emp.designation}</span>
+                    </div>
+                    <div className="col-span-3 text-right whitespace-nowrap">
+                      <p className="text-xs font-medium text-foreground">{formatDate(emp.lastWorkingDate)}</p>
+                      <span className="text-[11px] text-orange-600 font-medium">
+                        {getDaysUntil(emp.lastWorkingDate)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Inbox className="h-8 w-8 mb-2 opacity-40" />
+                <p className="text-sm font-medium">No employees currently in notice period</p>
+                <p className="text-xs opacity-75">Submitted and active notice periods will be tracked here.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Section 4: Exit & Recently Relieved */}
+        <Card className="flex flex-col">
+          <CardHeader className="pb-3 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Briefcase className="h-4 w-4 text-zinc-600" />
+                <CardTitle className="text-base">Exit Summary & Recently Relieved</CardTitle>
+              </div>
+              <Link href="/hr/exit" className="text-xs text-primary hover:underline flex items-center gap-1">
+                Exit Hub <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <CardDescription className="text-xs">
+              Recent departures with completed clearances and final relieving documentation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 p-0">
+            {isLoading ? (
+              <div className="p-4 space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                ))}
+              </div>
+            ) : recentRelieved.length > 0 ? (
+              <div className="divide-y">
+                <div className="grid grid-cols-12 px-4 py-2 text-xs font-semibold text-muted-foreground bg-muted/30">
+                  <div className="col-span-5">Employee</div>
+                  <div className="col-span-4">Designation</div>
+                  <div className="col-span-3 text-right">Relieved Date</div>
+                </div>
+                {recentRelieved.map((emp) => (
+                  <div key={emp.id} className="grid grid-cols-12 px-4 py-3 text-sm items-center hover:bg-muted/10">
+                    <div className="col-span-5 min-w-0 pr-2">
+                      <Link
+                        href={`/hr/employees/${emp.id}`}
+                        className="font-medium text-foreground hover:text-primary hover:underline truncate block"
+                      >
+                        {emp.name}
+                      </Link>
+                      <span className="text-xs text-muted-foreground">{emp.employeeId}</span>
+                    </div>
+                    <div className="col-span-4 text-xs text-muted-foreground truncate pr-2">
+                      <span className="font-medium text-foreground">{emp.designation}</span>
+                    </div>
+                    <div className="col-span-3 text-right text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDate(emp.relievedDate)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+                <Inbox className="h-8 w-8 mb-2 opacity-40" />
+                <p className="text-sm font-medium">No recent exits recorded</p>
+                <p className="text-xs opacity-75">Completed exit processes and relieved staff will appear here.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Security & Tenant Assurance Footer */}
+      <div className="rounded-lg border p-4 bg-muted/20 flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-600" />
+          <span>Tenant Isolated HR Workspace • Real-Time Database Metrics</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href="/master/organization" className="hover:underline text-foreground">
+            Company Settings
+          </Link>
+          <span>•</span>
+          <Link href="/hr/audit" className="hover:underline text-foreground">
+            Audit Logs
+          </Link>
+          <span>•</span>
+          <Link href="/documents/templates" className="hover:underline text-foreground">
+            Document Templates
+          </Link>
+        </div>
       </div>
     </div>
   );

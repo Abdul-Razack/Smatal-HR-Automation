@@ -27,6 +27,15 @@ export default function TemplatesPage() {
       header: 'Template Name',
     },
     {
+      accessorKey: 'documentTypeName',
+      header: 'Document Type',
+      cell: ({ row }) => (
+        <span className="text-sm font-medium text-foreground">
+          {row.original.documentTypeName || '—'}
+        </span>
+      ),
+    },
+    {
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }) => <StatusChip status={row.original.status} />,

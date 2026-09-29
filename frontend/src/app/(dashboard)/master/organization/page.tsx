@@ -1,14 +1,5 @@
-'use client';
+import { CompanySettingsView } from '@/modules/organization/components/settings/CompanySettingsView';
 
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-
-export default function OrganizationPage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.replace('/master/organization/departments');
-  }, [router]);
-
-  return null;
+export default function OrganizationSettingsPage() {
+  return <CompanySettingsView />;
 }

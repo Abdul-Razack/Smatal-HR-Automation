@@ -26,12 +26,22 @@ export class LocalStorageAdapter implements IStorageService {
     }
   }
 
+  private resolveSafePath(key: string): string {
+    const cleanKey = key.replace(/^local:\/\//, '');
+    const resolvedPath = path.resolve(this.baseDir, cleanKey);
+    const resolvedBase = path.resolve(this.baseDir);
+    if (!resolvedPath.startsWith(resolvedBase + path.sep) && resolvedPath !== resolvedBase) {
+      throw new Error('Access denied: Invalid storage path or path traversal detected');
+    }
+    return resolvedPath;
+  }
+
   async upload(
     key: string,
     buffer: Buffer,
     mimeType: string,
   ): Promise<StorageUploadResult> {
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(key);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -51,7 +61,7 @@ export class LocalStorageAdapter implements IStorageService {
     stream: import('stream').Readable,
     _mimeType: string,
   ): Promise<StorageUploadResult> {
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(key);
     const dir = path.dirname(filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -90,34 +100,30 @@ export class LocalStorageAdapter implements IStorageService {
   }
 
   async download(uri: string): Promise<Buffer> {
-    const key = uri.replace('local://', '');
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(uri);
     if (!fs.existsSync(filePath)) {
-      throw new Error(`Storage: File not found at key: ${key}`);
+      throw new Error(`Storage: File not found for uri: ${uri}`);
     }
     return fs.readFileSync(filePath);
   }
 
   async downloadStream(uri: string): Promise<import('stream').Readable> {
-    const key = uri.replace('local://', '');
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(uri);
     if (!fs.existsSync(filePath)) {
-      throw new Error(`Storage: File not found at key: ${key}`);
+      throw new Error(`Storage: File not found for uri: ${uri}`);
     }
     return fs.createReadStream(filePath);
   }
 
   async delete(uri: string): Promise<void> {
-    const key = uri.replace('local://', '');
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(uri);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
   }
 
   async exists(uri: string): Promise<boolean> {
-    const key = uri.replace('local://', '');
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(uri);
     return fs.existsSync(filePath);
   }
 
@@ -127,8 +133,7 @@ export class LocalStorageAdapter implements IStorageService {
   }
 
   async getMetadata(uri: string): Promise<StorageMetadata> {
-    const key = uri.replace('local://', '');
-    const filePath = path.join(this.baseDir, key);
+    const filePath = this.resolveSafePath(uri);
     const stat = fs.statSync(filePath);
     const buffer = fs.readFileSync(filePath);
     const checksum = crypto.createHash('sha256').update(buffer).digest('hex');

@@ -9,16 +9,16 @@ import { FormFieldConfig } from '@/shared/types';
 import { useMaster } from '../../hooks/useMaster';
 import { useModalStore } from '@/shared/modals/useModalStore';
 
-export function FieldGroupForm() {
+export function FieldGroupForm({ initialData }: { initialData?: any } = {}) {
   const { createFieldGroup } = useMaster();
   const closeModal = useModalStore((state) => state.closeModal);
   
   const form = useForm<FieldGroupFormData>({
     resolver: zodResolver(fieldGroupSchema),
     defaultValues: {
-      name: '',
-      description: '',
-      displayOrder: 1,
+      name: initialData?.name || '',
+      description: initialData?.description || '',
+      displayOrder: initialData?.displayOrder || 1,
     },
   });
 

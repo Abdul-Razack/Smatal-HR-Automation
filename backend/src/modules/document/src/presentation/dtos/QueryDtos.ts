@@ -43,4 +43,14 @@ export class DocumentListQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   workflowInstanceId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter documents created on or after this date (ISO string)' })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'Filter documents created on or before this date (ISO string)' })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
 }

@@ -42,9 +42,14 @@ export class GlobalExceptionFilter implements ExceptionFilter {
               ? ErrorCode.FORBIDDEN
               : ErrorCode.INTERNAL_SERVER_ERROR;
     } else if (exception instanceof DomainException) {
-      status = HttpStatus.BAD_REQUEST; // Map domain errors to 400 Bad Request
+      if (exception.code === 'NOT_FOUND') {
+        status = HttpStatus.NOT_FOUND;
+        code = ErrorCode.NOT_FOUND;
+      } else {
+        status = HttpStatus.BAD_REQUEST; // Map domain errors to 400 Bad Request
+        code = (exception.code as ErrorCode) || ErrorCode.DOMAIN_RULE_VIOLATION;
+      }
       message = exception.message;
-      code = (exception.code as ErrorCode) || ErrorCode.DOMAIN_RULE_VIOLATION;
     } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       if (exception.code === 'P2002') {
         status = HttpStatus.CONFLICT;

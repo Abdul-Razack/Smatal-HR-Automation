@@ -136,11 +136,19 @@ export class TemplateMapper implements Mapper<TemplateAggregate, any, any> {
         id: v.id.toValue(),
         versionNumber: v.versionNumber,
         contentType: v.contentType,
+        // Include content for HTML versions so the browser editor can reload it
+        content: v.contentType === 'html' ? v.content : undefined,
         status: v.status,
         importStatus: v.importStatus,
         placeholderCount: v.placeholderCount,
         originalFilename: v.originalFilename,
+        notes: v.notes,
         publishedAt: v.publishedAt,
+        createdAt: v.createdAt,
+        placeholders: v.placeholders.map((p) => ({
+          placeholderKey: p.placeholderKey,
+          isRequired: p.isRequired,
+        })),
       })),
     };
   }
