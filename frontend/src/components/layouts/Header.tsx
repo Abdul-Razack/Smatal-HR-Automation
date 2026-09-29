@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/modules/auth/hooks/useAuth';
 import { NotificationBell } from '@/modules/notification/components/NotificationBell';
 import { GlobalSearchDropdown } from '@/modules/search/components/GlobalSearchDropdown';
+import { CompanySwitcher } from './CompanySwitcher';
 import { useAuthStore } from '@/store';
 import { cn } from '@/lib/utils';
 
@@ -142,7 +143,8 @@ export function Header() {
         </nav>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
+        <CompanySwitcher />
         <GlobalSearchDropdown />
 
         {/* Theme Toggle */}

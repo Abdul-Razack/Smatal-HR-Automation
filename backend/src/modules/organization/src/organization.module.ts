@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { IdentityModule } from '../../identity/src/identity.module';
 import { BusinessIdGenerator } from '../../../infrastructure/database/BusinessIdGenerator';
+import { PrismaService } from '../../../infrastructure/database/prisma.service';
 
 // Controllers
 import { OrganizationController } from './presentation/controllers/OrganizationController';
@@ -70,6 +71,7 @@ const Repositories = [
     ...QueryHandlers,
     ...Repositories,
     BusinessIdGenerator, // from infrastructure
+    PrismaService,
   ],
   exports: [...Repositories],
 })

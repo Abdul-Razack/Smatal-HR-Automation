@@ -33,6 +33,10 @@ export const setupInterceptors = (apiClient: AxiosInstance) => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      if (companyId && config.headers) {
+        config.headers['x-company-id'] = companyId;
+      }
+
       return config;
     },
     (error: AxiosError) => Promise.reject(error)

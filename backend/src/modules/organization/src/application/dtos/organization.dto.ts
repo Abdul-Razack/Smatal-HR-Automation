@@ -21,12 +21,32 @@ export class CreateCompanyDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
+  legalName?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
   website?: string;
 
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
   industry?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  email?: string;
 
   @ApiPropertyOptional()
   @IsString()

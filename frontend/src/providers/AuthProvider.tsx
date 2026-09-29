@@ -38,9 +38,11 @@ export function AuthProvider({ children }: { children: any }) {
             name: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
             email: user.email,
             companyId: user.companyId,
+            isCommon: user.isCommon,
           },
           user.roles || [],
           user.permissions || [],
+          user.accessibleCompanies || [],
         );
       })
       .catch(() => {

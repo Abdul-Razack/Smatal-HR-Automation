@@ -38,6 +38,7 @@ export class PrismaIdentityUserRepository
     }
     const record = await this.delegate.findFirst({
       where: whereClause,
+      include: { profile: true },
     });
     if (!record) return null;
     return this.mapper.toDomain(record);

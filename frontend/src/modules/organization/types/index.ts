@@ -16,6 +16,17 @@ export interface Company {
   taxNumber?: string;
 }
 
+export interface CreateCompanyDto {
+  name: string;
+  code: string;
+  legalName?: string;
+  website?: string;
+  industry?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+}
+
 export interface CompanySettings {
   id: string;
   name: string;

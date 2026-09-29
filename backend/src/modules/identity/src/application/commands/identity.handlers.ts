@@ -140,6 +140,7 @@ export class RegisterUserHandler implements ICommandHandler<RegisterUserCommand>
       email: user.email,
       profileId: user.profileId.toString(),
       companyId: user.companyId.toString(),
+      isCommon: user.isCommon,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
       mfaEnabled: user.mfaEnabled,
@@ -237,11 +238,54 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
       }
     }
 
+    const isCommon = Boolean(user.isCommon || roles.includes('SUPER_ADMIN'));
+
+    let accessibleCompanies: Array<{
+      id: string;
+      businessId: string;
+      name: string;
+      code: string;
+      logoUrl: string | null;
+    }> = [];
+
+    if (this.prisma && this.prisma.company) {
+      try {
+        if (isCommon) {
+          accessibleCompanies = await this.prisma.company.findMany({
+            where: { isActive: true, isDeleted: false },
+            select: {
+              id: true,
+              businessId: true,
+              name: true,
+              code: true,
+              logoUrl: true,
+            },
+            orderBy: { name: 'asc' },
+          });
+        } else {
+          const comp = await this.prisma.company.findUnique({
+            where: { id: user.companyId.toString() },
+            select: {
+              id: true,
+              businessId: true,
+              name: true,
+              code: true,
+              logoUrl: true,
+            },
+          });
+          if (comp) accessibleCompanies = [comp];
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    }
+
     const payload = {
       sub: user.id.toString(),
       email: user.email,
       companyId: user.companyId.toString(),
       profileId: user.profileId.toString(),
+      isCommon,
       roles,
       permissions,
     };
@@ -262,12 +306,16 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
       accessToken,
       refreshToken,
       expiresIn: 86400,
+      accessibleCompanies,
       user: {
         id: user.id.toString(),
         businessId: user.businessId,
         email: user.email,
         profileId: user.profileId.toString(),
         companyId: user.companyId.toString(),
+        firstName: (user as any).firstName,
+        lastName: (user as any).lastName,
+        isCommon,
         isActive: user.isActive,
         isEmailVerified: user.isEmailVerified,
         mfaEnabled: user.mfaEnabled,
@@ -275,6 +323,7 @@ export class LoginHandler implements ICommandHandler<LoginCommand> {
         createdAt: user.createdAt,
         roles,
         permissions,
+        accessibleCompanies,
       },
     };
   }

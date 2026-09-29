@@ -144,6 +144,18 @@ export class UserResponseDto {
   @ApiProperty()
   createdAt: Date;
 
+  @ApiPropertyOptional()
+  isCommon?: boolean;
+
+  @ApiPropertyOptional()
+  accessibleCompanies?: Array<{
+    id: string;
+    businessId: string;
+    name: string;
+    code: string;
+    logoUrl?: string | null;
+  }>;
+
   @ApiPropertyOptional({ type: [String] })
   roles?: string[];
 
@@ -163,6 +175,15 @@ export class AuthResponseDto {
 
   @ApiProperty()
   user: UserResponseDto;
+
+  @ApiPropertyOptional()
+  accessibleCompanies?: Array<{
+    id: string;
+    businessId: string;
+    name: string;
+    code: string;
+    logoUrl?: string | null;
+  }>;
 }
 
 export class ProfileResponseDto {

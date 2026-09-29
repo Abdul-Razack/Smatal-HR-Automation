@@ -1,5 +1,13 @@
 import { apiClient } from '@/api/client';
-import { Branch, Company, CompanySettings, Department, Designation, UpdateCompanySettingsDto } from '../types';
+import {
+  Branch,
+  Company,
+  CompanySettings,
+  CreateCompanyDto,
+  Department,
+  Designation,
+  UpdateCompanySettingsDto,
+} from '../types';
 
 export const organizationApi = {
   // Company Settings (Step 9)
@@ -34,13 +42,18 @@ export const organizationApi = {
     await apiClient.delete('/company/settings/signature');
   },
 
-  // Company
+  // Company & Multi-Entity Management
   getMyCompany: async (): Promise<Company> => {
     const response = await apiClient.get('/organization/company/me');
-    return response.data;
+    return response.data?.data || response.data;
   },
-  createCompany: async (data: Omit<Company, 'id'>): Promise<void> => {
-    await apiClient.post('/organization/company', data);
+  listCompanies: async (): Promise<Company[]> => {
+    const response = await apiClient.get('/organization/companies');
+    return response.data?.data || response.data;
+  },
+  createCompany: async (data: CreateCompanyDto): Promise<Company> => {
+    const response = await apiClient.post('/organization/company', data);
+    return response.data?.data || response.data;
   },
 
   // Branches

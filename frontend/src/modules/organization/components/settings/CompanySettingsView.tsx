@@ -27,9 +27,11 @@ import {
   FileText,
   ShieldAlert,
   Image as ImageIcon,
+  Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/api/client';
+import { CreateCompanyModal } from '../forms/CreateCompanyModal';
 
 export function CompanySettingsView() {
   const {
@@ -43,12 +45,16 @@ export function CompanySettingsView() {
 
   const { data: settings, isLoading } = useCompanySettings();
   const userRoles = useAuthStore((state) => state.roles);
+  const isCommon = useAuthStore((state) => state.isCommon);
 
   const canEdit =
     userRoles.includes('HR_ADMIN') ||
     userRoles.includes('HR_MANAGER') ||
     userRoles.includes('SUPER_ADMIN');
 
+  const canCreateCompany = Boolean(isCommon || userRoles.includes('SUPER_ADMIN'));
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [isEditing, setIsEditing] = React.useState(false);
   const [formData, setFormData] = React.useState({
     name: '',
@@ -289,6 +295,17 @@ export function CompanySettingsView() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canCreateCompany && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <Plus className="h-4 w-4" />
+              Add Sister Company
+            </Button>
+          )}
           {canEdit && (
             <>
               {isEditing ? (
@@ -750,6 +767,11 @@ export function CompanySettingsView() {
           </Card>
         </div>
       </div>
+
+      <CreateCompanyModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   );
 }

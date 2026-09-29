@@ -7,6 +7,7 @@ export interface IdentityUserProps extends TenantIsolatedEntityProps {
   email: string;
   passwordHash: string;
   isActive: boolean;
+  isCommon?: boolean;
   isEmailVerified: boolean;
   emailVerifiedAt?: Date | null;
   mfaEnabled: boolean;
@@ -38,6 +39,9 @@ export class IdentityUserAggregate extends AggregateRoot<IdentityUserProps> {
   }
   get companyId(): string {
     return this.props.companyId.toString();
+  }
+  get isCommon(): boolean {
+    return this.props.isCommon ?? false;
   }
   get email(): string {
     return this.props.email;

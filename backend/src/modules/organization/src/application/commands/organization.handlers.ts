@@ -42,11 +42,12 @@ export class CreateCompanyHandler implements ICommandHandler<CreateCompanyComman
     private readonly businessIdGen: BusinessIdGenerator,
   ) {}
 
-  async execute(command: CreateCompanyCommand): Promise<void> {
-    const existing = await this.companyRepo.findByCode(command.code);
+  async execute(command: CreateCompanyCommand): Promise<any> {
+    const normalizedCode = command.code.trim().toUpperCase();
+    const existing = await this.companyRepo.findByCode(normalizedCode);
     if (existing)
       throw new ConflictException(
-        `Company with code '${command.code}' already exists.`,
+        `Company with code '${normalizedCode}' already exists.`,
       );
 
     const now = new Date();
@@ -55,12 +56,16 @@ export class CreateCompanyHandler implements ICommandHandler<CreateCompanyComman
         businessId: await this.businessIdGen.generate(
           BUSINESS_ID_PREFIXES.COMPANY,
         ),
-        name: command.name,
-        code: command.code,
-        website: command.website,
-        industry: command.industry,
-        registrationNumber: command.registrationNumber,
-        taxNumber: command.taxNumber,
+        name: command.name.trim(),
+        legalName: (command.legalName || command.name).trim(),
+        code: normalizedCode,
+        website: command.website?.trim() || null,
+        industry: command.industry?.trim() || null,
+        address: command.address?.trim() || null,
+        phone: command.phone?.trim() || null,
+        email: command.email?.trim() || null,
+        registrationNumber: command.registrationNumber || null,
+        taxNumber: command.taxNumber || null,
         isActive: true,
         isDeleted: false,
         version: 1,
@@ -73,6 +78,15 @@ export class CreateCompanyHandler implements ICommandHandler<CreateCompanyComman
     );
 
     await this.companyRepo.save(company);
+    return {
+      id: company.id.toValue(),
+      businessId: company.businessId,
+      name: company.name,
+      legalName: company.legalName,
+      code: company.code,
+      website: company.website,
+      industry: company.industry,
+    };
   }
 }
 

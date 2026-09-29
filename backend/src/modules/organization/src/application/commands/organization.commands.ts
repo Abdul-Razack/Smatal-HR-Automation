@@ -9,6 +9,10 @@ export class CreateCompanyCommand implements ICommand {
     public readonly industry?: string,
     public readonly registrationNumber?: string,
     public readonly taxNumber?: string,
+    public readonly legalName?: string,
+    public readonly address?: string,
+    public readonly phone?: string,
+    public readonly email?: string,
   ) {}
 }
 

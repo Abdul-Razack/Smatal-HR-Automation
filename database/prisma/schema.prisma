@@ -389,6 +389,7 @@ model IdentityUser {
   email             String    @db.VarChar(255)
   passwordHash      String    @db.VarChar(500)
   isActive          Boolean   @default(true)
+  isCommon          Boolean   @default(false)
   isEmailVerified   Boolean   @default(false)
   emailVerifiedAt   DateTime?
   mfaEnabled        Boolean   @default(false)
@@ -413,6 +414,7 @@ model IdentityUser {
   @@unique([companyId, email])
   @@index([profileId])
   @@index([companyId])
+  @@index([isCommon])
   @@index([isDeleted])
   @@map("identity_users")
 }

@@ -71,8 +71,6 @@ export class CompanyMapper implements Mapper<CompanyAggregate, any, any> {
       authorizedPersonDesignation: entity.authorizedPersonDesignation,
       signatureUrl: entity.signatureUrl,
       industry: entity.industry,
-      registrationNumber: entity.registrationNumber,
-      taxNumber: entity.taxNumber,
       isActive: entity.isActive,
       isDeleted: entity.isDeleted,
       version: entity.version,

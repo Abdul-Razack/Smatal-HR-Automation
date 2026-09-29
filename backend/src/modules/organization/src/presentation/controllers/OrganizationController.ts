@@ -6,6 +6,7 @@ import {
   Body,
   UseGuards,
   Request,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -35,6 +36,7 @@ import {
   ListDepartmentsQuery,
   ListDesignationsQuery,
 } from '../../application/queries/organization.queries';
+import { PrismaService } from '../../../../../infrastructure/database/prisma.service';
 
 @ApiTags('Organization')
 @ApiBearerAuth()
@@ -44,9 +46,46 @@ export class OrganizationController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
+    private readonly prisma: PrismaService,
   ) {}
 
-  // ─── Company ──────────────────────────────────────────────────────────────
+  // ─── Companies ────────────────────────────────────────────────────────────
+  @Get('companies')
+  @ApiOperation({ summary: 'List all companies accessible to the authenticated user' })
+  async listCompanies(@Request() req: any) {
+    const isCommon = Boolean(req.user.isCommon || req.user.roles?.includes('SUPER_ADMIN'));
+    if (isCommon) {
+      return this.prisma.company.findMany({
+        where: { isActive: true, isDeleted: false },
+        select: {
+          id: true,
+          businessId: true,
+          name: true,
+          legalName: true,
+          code: true,
+          logoUrl: true,
+        },
+        orderBy: { name: 'asc' },
+      });
+    }
+
+    return this.prisma.company.findMany({
+      where: {
+        id: req.user.homeCompanyId || req.user.companyId,
+        isActive: true,
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+        businessId: true,
+        name: true,
+        legalName: true,
+        code: true,
+        logoUrl: true,
+      },
+    });
+  }
+
   @Get('company/me')
   @ApiOperation({ summary: 'Get current user company details' })
   @ApiResponse({ status: 200, type: OrganizationResponseDto })
@@ -55,9 +94,13 @@ export class OrganizationController {
   }
 
   @Post('company')
-  @ApiOperation({ summary: 'Create new company (Super Admin)' })
+  @ApiOperation({ summary: 'Create new company (Leadership / Super Admin)' })
   async createCompany(@Request() req: any, @Body() dto: CreateCompanyDto) {
-    await this.commandBus.execute(
+    const isCommon = Boolean(req.user.isCommon || req.user.roles?.includes('SUPER_ADMIN'));
+    if (!isCommon) {
+      throw new ForbiddenException('Only common leadership or super administrators can create sister companies.');
+    }
+    return this.commandBus.execute(
       new CreateCompanyCommand(
         dto.name,
         dto.code,
@@ -66,6 +109,10 @@ export class OrganizationController {
         dto.industry,
         dto.registrationNumber,
         dto.taxNumber,
+        dto.legalName,
+        dto.address,
+        dto.phone,
+        dto.email,
       ),
     );
   }

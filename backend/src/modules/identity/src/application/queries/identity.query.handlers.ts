@@ -40,7 +40,14 @@ export class GetUserByIdHandler implements IQueryHandler<GetUserByIdQuery> {
 
   async execute(query: GetUserByIdQuery): Promise<UserResponseDto> {
     const user = await this.userRepo.findById(query.userId);
-    if (!user || user.companyId !== query.companyId) {
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    let isCommon = Boolean(user.isCommon);
+
+    // If not a common user, enforce strict company matching
+    if (!isCommon && query.companyId && user.companyId !== query.companyId) {
       throw new NotFoundException('User not found.');
     }
 
@@ -92,12 +99,57 @@ export class GetUserByIdHandler implements IQueryHandler<GetUserByIdQuery> {
       }
     }
 
+    if (!isCommon && roles.includes('SUPER_ADMIN')) {
+      isCommon = true;
+    }
+
+    let accessibleCompanies: Array<{
+      id: string;
+      businessId: string;
+      name: string;
+      code: string;
+      logoUrl: string | null;
+    }> = [];
+
+    if (this.prisma && this.prisma.company) {
+      try {
+        if (isCommon) {
+          accessibleCompanies = await this.prisma.company.findMany({
+            where: { isActive: true, isDeleted: false },
+            select: {
+              id: true,
+              businessId: true,
+              name: true,
+              code: true,
+              logoUrl: true,
+            },
+            orderBy: { name: 'asc' },
+          });
+        } else {
+          const comp = await this.prisma.company.findUnique({
+            where: { id: user.companyId.toString() },
+            select: {
+              id: true,
+              businessId: true,
+              name: true,
+              code: true,
+              logoUrl: true,
+            },
+          });
+          if (comp) accessibleCompanies = [comp];
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    }
+
     return {
       id: user.id.toString(),
       businessId: user.businessId,
       email: user.email,
       profileId: user.profileId.toString(),
-      companyId: user.companyId.toString(),
+      companyId: isCommon && query.companyId ? query.companyId : user.companyId.toString(),
+      isCommon,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
       mfaEnabled: user.mfaEnabled,
@@ -108,6 +160,7 @@ export class GetUserByIdHandler implements IQueryHandler<GetUserByIdQuery> {
       avatar: user.avatar,
       roles,
       permissions,
+      accessibleCompanies,
     };
   }
 }
@@ -257,7 +310,13 @@ export class GetUserPermissionsHandler implements IQueryHandler<GetUserPermissio
     const userRoles = await this.prisma.userRole.findMany({
       where: {
         identityUserId: query.userId,
-        identityUser: { companyId: query.companyId },
+        ...(query.companyId
+          ? {
+              identityUser: {
+                OR: [{ companyId: query.companyId }, { isCommon: true }],
+              },
+            }
+          : {}),
         OR: [
           { expiresAt: null },
           { expiresAt: { gt: new Date() } },

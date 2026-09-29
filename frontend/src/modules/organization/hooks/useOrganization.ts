@@ -123,6 +123,22 @@ export const useOrganization = () => {
     }
   });
 
+  const useCompanies = () => useQuery({
+    queryKey: ['organization', 'companies'],
+    queryFn: organizationApi.listCompanies,
+  });
+
+  const createCompany = useMutation({
+    mutationFn: organizationApi.createCompany,
+    onSuccess: (newCompany) => {
+      queryClient.invalidateQueries({ queryKey: ['organization', 'companies'] });
+      toast.success(`Company ${newCompany?.name || ''} created successfully!`);
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || 'Failed to create company');
+    },
+  });
+
   return {
     useCompany,
     useCompanySettings,
@@ -137,5 +153,7 @@ export const useOrganization = () => {
     createDepartment,
     createBranch,
     createDesignation,
+    useCompanies,
+    createCompany,
   };
 };

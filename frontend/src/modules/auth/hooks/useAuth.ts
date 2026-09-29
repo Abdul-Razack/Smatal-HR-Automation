@@ -22,6 +22,10 @@ export const useAuth = () => {
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
         user: data.user,
+        accessibleCompanies:
+          data.accessibleCompanies ||
+          (data.user as any)?.accessibleCompanies ||
+          [],
         roles: data.user.roles || [],
         permissions: data.user.permissions || [],
       });
